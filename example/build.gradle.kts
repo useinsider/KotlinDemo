@@ -15,7 +15,7 @@ android {
         versionName = "1.0.0"
 
         // TODO: Please change with your partner name.
-        val partnerName = "orkunbites"
+        val partnerName = "partnername"
         manifestPlaceholders["partner"] = partnerName
         buildConfigField("String", "PARTNER_NAME", "\"$partnerName\"")
         manifestPlaceholders["googleAdsAppId"] = project.findProperty("GOOGLE_ADS_APP_ID") ?: ""
