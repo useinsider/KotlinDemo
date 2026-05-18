@@ -14,7 +14,7 @@ android {
         versionName = "1.0.0"
 
         // TODO: Please change with your partner name.
-        val partnerName = "partnername"
+        val partnerName = "orkunbites"
         manifestPlaceholders["partner"] = partnerName
         buildConfigField("String", "PARTNER_NAME", "\"$partnerName\"")
     }
@@ -45,14 +45,20 @@ dependencies {
 
     implementation(libs.insider.sdk)
     implementation(libs.insider.webview)
+    // insiderwebview declares webkit as compileOnly, so the consumer must still
+    // provide it explicitly — it is not carried by the SDK POM.
     implementation(libs.webkit)
-    implementation(libs.firebase.messaging)
-    implementation(libs.lifecycle.process)
-    implementation(libs.security.crypto)
-    implementation(libs.androidx.work.runtime)
+
+    // MOB-27585 embed-deps validation: with insider:16.1.0-rc1 these are now
+    // resolved transitively from the SDK POM, so a partner no longer declares
+    // them manually. Uncomment to revert to the pre-16.1.0 manual setup.
+    // implementation(libs.firebase.messaging)
+    // implementation(libs.lifecycle.process)
+    // implementation(libs.security.crypto)
+    // implementation(libs.androidx.work.runtime)
     implementation(libs.androidx.work.runtime.ktx)
 
-    implementation(libs.huawei.push)
-    implementation(libs.huawei.ads)
-    implementation(libs.huawei.location)
+    // implementation(libs.huawei.push)
+    // implementation(libs.huawei.ads)
+    // implementation(libs.huawei.location)
 }
