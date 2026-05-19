@@ -65,24 +65,6 @@ KotlinDemo/
 | `example` | Native | `insider` |
 | `examplewebview` | WebView | `insider` + `insiderwebview` |
 
-| Feature | Native | WebView |
-|---|:---:|:---:|
-| **Reinit** | 🟢 | 🔴 |
-| Event tracking (`tagEvent`, custom events) | 🟢 | 🟢 |
-| Page-visit events (home, listing, PDP, cart, wishlist) | 🟢 | 🟢 |
-| User identifiers (login, logout) | 🟢 | 🟢 |
-| User attributes & opt-ins (email, SMS, push, location, ...) | 🟢 | 🟢 |
-| Product, cart, wishlist, purchase events | 🟢 | 🟢 |
-| In-app messaging (enable / disable) | 🟢 | 🟢 |
-| **Smart Recommender** | 🟢 | 🔴 |
-| **Content Optimizer** (A/B testing) | 🟢 | 🔴 |
-| Push notifications (FCM + HMS) | 🟢 | 🟢 |
-| Geofencing | 🟢 | 🟢 |
-| GDPR (carrier, IP, location, ...) | 🟢 | 🟢 |
-| **App Cards** (campaign messaging) | 🟢 | 🔴 |
-
-If your use case depends on any row in **bold**, pick `example` module. Otherwise either module works.
-
 ## Getting Started
 
 ### 1. Clone the Repository
