@@ -62,7 +62,7 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.compose.material.icons.extended)
-    implementation(libs.androidx.work.runtime)
+//    implementation(libs.androidx.work.runtime)
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.coil.compose)
@@ -71,17 +71,23 @@ dependencies {
     //Required
     implementation(libs.insider.sdk)
     implementation(libs.insider.webview)
+    // insiderwebview declares webkit as compileOnly, so the consumer must still
+    // provide it explicitly — it is not carried by the SDK POM.
     implementation(libs.webkit)
-    implementation(libs.firebase.messaging)
-    implementation(libs.lifecycle.process)
-    implementation(libs.security.crypto)
+//    implementation(libs.firebase.messaging)
+//    implementation(libs.lifecycle.process)
+//    implementation(libs.security.crypto)
 
-    implementation(libs.huawei.push)
-    implementation(libs.huawei.ads)
-    implementation(libs.huawei.location)
-
-    //Optional for Geofence
-    implementation(libs.play.services.location)
+    // MOB-27585 embed-deps validation: with insider:16.1.0-rc1 the 7 lines below
+    // are resolved transitively from the SDK POM, so a partner no longer declares
+    // them manually.
+    // implementation(libs.firebase.messaging)
+    // implementation(libs.lifecycle.process)
+    // implementation(libs.security.crypto)
+    // implementation(libs.huawei.push)
+    // implementation(libs.huawei.ads)
+    // implementation(libs.huawei.location)
+    // implementation(libs.play.services.location) // (was: //Optional for Geofence)
 
     debugImplementation(libs.androidx.ui.tooling)
 }
