@@ -18,9 +18,18 @@ android {
         manifestPlaceholders["partner"] = partnerName
         buildConfigField("String", "PARTNER_NAME", "\"$partnerName\"")
     }
+    signingConfigs {
+        create("release") {
+            storeFile = file(System.getenv("KEYSTORE_FILE") ?: "insider.jks")
+            storePassword = System.getenv("KEYSTORE_PASSWORD")
+            keyAlias = System.getenv("KEYSTORE_KEY_ALIAS")
+            keyPassword = System.getenv("KEYSTORE_KEY_PASSWORD")
+        }
+    }
     buildTypes {
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions {
