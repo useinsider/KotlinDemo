@@ -15,6 +15,8 @@ pluginManagement {
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
+        // App Frames demo: local unpublished SDK aar (example/libs/insider-appframes.aar).
+        flatDir { dirs("example/libs") }
         google()
         mavenCentral()
         maven { url = uri("https://mobilesdk.useinsider.com/android") }

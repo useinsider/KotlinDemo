@@ -538,3 +538,6 @@ obj/
 .claude.local.md
 rag.config.json
 .orbit-output/config/orbit-task.customize.yaml
+
+# App Frames demo: locally-built, unpublished Insider SDK aar (not for commit)
+example/libs/*.aar

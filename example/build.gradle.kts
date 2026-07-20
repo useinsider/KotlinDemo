@@ -69,7 +69,14 @@ dependencies {
     implementation(libs.coil.network.okhttp)
 
     //Required
-    implementation(libs.insider.sdk)
+    // App Frames demo: local unpublished SDK build (example/libs/insider-appframes.aar,
+    // git-ignored) — it carries the InsiderAppFramesView API not yet in any published release.
+    // Swap back to `implementation(libs.insider.sdk)` once an App-Frames-capable version ships.
+    implementation(files("libs/insider-appframes.aar"))
+    // A bare aar carries no POM, so the SDK's runtime deps are declared here. Most are already
+    // listed below; these two are the ones the SDK needs that the demo did not previously declare.
+    implementation("androidx.legacy:legacy-support-v4:1.0.0")
+    implementation("com.google.android.play:review:2.0.2")
     implementation(libs.insider.webview)
     implementation(libs.webkit)
     implementation(libs.firebase.messaging)
