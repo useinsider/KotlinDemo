@@ -331,6 +331,50 @@ The demo does not bind `POST_NOTIFICATIONS` to a single button — pick the UX t
 
 Use the same `withPushPermission` helper (Native) or `requestPermission('push')` bridge call (WebView) — the manifest entry is already in place.
 
+## App Frames
+
+The **App Frames** screen (`screen/AppFramesScreen.kt`, reachable from the **Core** section of the
+main screen) demonstrates integrating the SDK's `InsiderAppFramesView` in a Jetpack Compose app via
+`AndroidView` interop. It renders five placements (`home_page`, `placement_1`–`placement_4`) and
+shows:
+
+- **Drop-in with `wrap_content` height** — `home_page` and `placement_1`–`placement_3`; the view
+  self-sizes to its content.
+- **Drop-in with a fixed height** — `placement_4`, constrained to 200dp.
+- **Full listener coverage** — one `InsiderAppFramesViewListener` per placement drives a status
+  chip, surfacing every callback: `onLoadStarted`, `onLoadFinished`, `onLoadFailed`,
+  `onHeightUpdateRequested`, `onFrameActionTriggered`, and `onDismissRequested`.
+- **Dismiss persistence (recommended pattern)** — on `onDismissRequested` the placement id is saved
+  to `SharedPreferences` (`util/DismissedFramesStore.kt`) and the frame is removed; it stays hidden
+  across relaunches. "Reset dismissed frames" clears the store.
+
+Each placement is created directly with `InsiderAppFramesView(context)`, then wired with
+`setPlacementId(...)` and `setAppFramesListener(...)`:
+
+```kotlin
+AndroidView(
+    factory = { ctx ->
+        InsiderAppFramesView(ctx).apply {
+            setPlacementId("home_page")
+            setAppFramesListener(object : InsiderAppFramesViewListener {
+                override fun onLoadStarted(view: InsiderAppFramesView) { /* … */ }
+                override fun onLoadFinished(view: InsiderAppFramesView) { /* … */ }
+                override fun onLoadFailed(view: InsiderAppFramesView, error: InsiderAppFramesError) { /* … */ }
+                override fun onHeightUpdateRequested(view: InsiderAppFramesView, heightPx: Int) { /* … */ }
+                override fun onFrameActionTriggered(view: InsiderAppFramesView, data: JSONObject) { /* … */ }
+                override fun onDismissRequested(view: InsiderAppFramesView) { /* persist + hide */ }
+            })
+        }
+    }
+)
+```
+
+> **Note:** The App Frames API ships in a newer Insider SDK build than the version pinned in
+> `libs.versions.toml`. Point `insider_sdk` at an App-Frames-capable release (or a local build) to
+> run this screen. Placements only render content when the connected panel has App Frames campaigns
+> configured for those placement ids; otherwise each placement exercises the
+> `onLoadFailed(NO_FRAME_FOR_PLACEMENT)` path.
+
 ## InsiderWebView
 
 The `examplewebview` module demonstrates the `insiderwebview` SDK. The `MainActivity` hands the `WebView` to the SDK via a single call, then loads the demo page from the APK assets:
