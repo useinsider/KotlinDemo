@@ -40,15 +40,28 @@ Plus: update the demo README, and skip the Java variant (no Java sample exists h
 
 The pinned `com.useinsider:insider:16.1.0-rc1` (RC S3 repo) contains **no** App Frames classes
 (verified: the aar has zero `Frame` classes and no `placementId` attr). App Frames exists only as
-source in the `mobileandroid` App Frames branches. Resolution:
+source in the `mobileandroid` App Frames branches. There is **no** maven-publish task on the insider
+module and **no `mvn`** on the machine, so `publishToMavenLocal` / `install:install-file` are not
+available. Resolution — consume a **locally-built aar** via a Gradle `flatDir` repo:
 
-- Build the `insider` aar from `mobileandroid` branch **`feature/appframes-action-listener`** (this
-  branch carries the final 5-callback `InsiderAppFramesViewListener`) and publish it to
-  **`mavenLocal`** under a pinned local version.
-- In the demo worktree: add `mavenLocal()` to `settings.gradle.kts`
-  `dependencyResolutionManagement`, keep the RC repo (needed for `insiderwebview:1.1.0-rc1` and
-  transitive deps), and pin `insider_sdk` in `libs.versions.toml` to the built version.
-- **Verify** the resolved aar exposes `com.useinsider.insider.InsiderAppFramesView` before wiring UI.
+- Build the `insider` aar from `mobileandroid` branch **`feature/appframes-action-listener`**
+  (versionName `16.0.7`; carries the final 6-callback `InsiderAppFramesViewListener`) in an isolated
+  worktree: `./gradlew :insider:assembleRelease`.
+- Copy the produced `insider/build/outputs/aar/insider-release.aar` into the demo worktree at
+  `example/libs/insider-appframes.aar` (git-ignored — a local, unpublished build).
+- In the demo worktree: add a `flatDir { dirs("libs") }` repo to `settings.gradle.kts`
+  `dependencyResolutionManagement`, keep the RC repo (needed for `insiderwebview:1.1.0-rc1`), replace
+  `implementation(libs.insider.sdk)` with `implementation(files("libs/insider-appframes.aar"))`, and
+  **declare the SDK's runtime transitive deps manually** (a bare aar carries no POM). Main already
+  declares most; add the two missing ones: `androidx.legacy:legacy-support-v4:1.0.0` and
+  `com.google.android.play:review:2.0.2`. Full runtime set the SDK needs: legacy-support-v4,
+  lifecycle-process, work-runtime, security-crypto, firebase-messaging, play-services-location,
+  play:review, huawei push/ads/location, webkit.
+- **Verify** the aar exposes `com.useinsider.insider.InsiderAppFramesView` (`unzip -l` the
+  `classes.jar`) before wiring UI.
+- The `example/build.gradle.kts` dependency change is committed with a comment explaining the aar is
+  a local unpublished App Frames build; reviewers/CI cannot compile until the SDK ships a published
+  App-Frames version (then the `files(...)` line is swapped back to a pinned `libs.insider.sdk`).
 
 ### Test partner
 
@@ -77,6 +90,7 @@ interface InsiderAppFramesViewListener {      // callbacks on main thread
     void onLoadFailed(InsiderAppFramesView view, InsiderAppFramesError error)
     void onHeightUpdateRequested(InsiderAppFramesView view, int heightPx)
     void onDismissRequested(InsiderAppFramesView view)
+    default void onFrameActionTriggered(InsiderAppFramesView view, JSONObject data)  // optional
 }
 
 final class InsiderAppFramesError extends Exception {
@@ -90,7 +104,9 @@ final class InsiderAppFramesError extends Exception {
   directly (constructor in Compose `AndroidView`, or XML tag).
 - The SDK never mutates the view's visibility / height / alpha — **the integrator owns dismiss and
   sizing**. This is why the persistence pattern lives app-side.
-- The Android listener has **5** callbacks (no `didTriggerAction`; that callback is iOS-only).
+- The Android listener (on `feature/appframes-action-listener`, the branch we build from) has **6**
+  callbacks: the 5 core ones plus a `default onFrameActionTriggered(view, JSONObject)` — the
+  iOS-parity action callback. The demo overrides and demonstrates all 6.
 
 ## 4. Architecture
 
@@ -121,8 +137,8 @@ MainScreen (Core section)
   `statuses: Map<String, FrameStatus>` (Compose state) and `dismissed: Set<String>` (loaded from
   the store). Functions: `updateStatus(placementId, FrameStatus)`, `persistDismiss(placementId)`,
   `resetDismissed()`, `isDismissed(placementId)`. `FrameStatus` is a small enum/sealed type
-  (`Idle`, `Loading`, `Loaded`, `HeightUpdated`, `Failed(message)`, `Dismissed`) mapped to chip
-  text + color.
+  (`Idle`, `Loading`, `Loaded`, `HeightUpdated`, `ActionTriggered`, `Failed(message)`, `Dismissed`)
+  mapped to chip text + color.
 - **`util/DismissedFramesStore.kt`** — thin wrapper over `SharedPreferences`
   (`"insider_app_frames"`, key `"dismissed_placements"` as a `StringSet`): `dismissed(): Set<String>`,
   `add(placementId)`, `clear()`. Plain `SharedPreferences` (not EncryptedSharedPreferences) — the
@@ -144,7 +160,7 @@ MainScreen (Core section)
 |---|---|---|
 | 1 | Drop-in `wrap_content` | `home_page`, `placement_1..3`: `AndroidView` with `LayoutParams.WRAP_CONTENT`; the view self-sizes via its `onMeasure`. |
 | 2 | Drop-in fixed height | `placement_4`: the `AndroidView` is constrained to a fixed `200.dp` (`Modifier.height(200.dp)` / fixed `LayoutParams`). A code comment marks it as the fixed-height variant. |
-| 3 | Listener — every callback | One `InsiderAppFramesViewListener` per view. Each callback maps to a `FrameStatus` and updates that placement's chip: `onLoadStarted`→Loading, `onLoadFinished`→Loaded, `onLoadFailed`→Failed(code[: message]), `onHeightUpdateRequested`→HeightUpdated, `onDismissRequested`→Dismissed. The chip is the visible proof each callback fired. |
+| 3 | Listener — every callback | One `InsiderAppFramesViewListener` per view. Each of the **6** callbacks maps to a `FrameStatus` and updates that placement's chip: `onLoadStarted`→Loading, `onLoadFinished`→Loaded, `onLoadFailed`→Failed(code[: message]), `onHeightUpdateRequested`→HeightUpdated, `onFrameActionTriggered`→ActionTriggered (also logs the `JSONObject`), `onDismissRequested`→Dismissed. The chip is the visible proof each callback fired. |
 | 4 | Dismiss-persistence | `onDismissRequested` → `viewModel.persistDismiss(id)` (writes to `DismissedFramesStore`) **and** hide the view. On screen entry, placements in the store start hidden. "Reset dismissed" clears the store and restores all sections. This is the recommended pattern: the SDK re-serves a dismissed frame on next load, so the app persists the user's dismiss and suppresses it. |
 
 ## 6. Data flow & Compose interop notes
@@ -161,8 +177,10 @@ MainScreen (Core section)
 
 ## 7. Testing plan (emulator)
 
-1. Build `insider` aar (App Frames branch) → `mavenLocal`; confirm `InsiderAppFramesView` present.
-2. Wire the demo worktree to it; set partner `qaautomatin1` locally (not committed).
+1. Build `insider` aar (App Frames branch) → copy to `example/libs/`; confirm `InsiderAppFramesView`
+   present in `classes.jar`.
+2. Wire the demo worktree to it (flatDir + `files(...)` + transitive deps); set partner
+   `qaautomatin1` locally (not committed).
 3. `./gradlew :example:assembleDebug`, install on a running emulator.
 4. Navigate Main → **App Frames**. Verify:
    - Each chip transitions from Idle → Loading → Loaded (or → Failed with a readable code).
@@ -182,11 +200,13 @@ MainScreen (Core section)
 
 ## 9. Risks
 
-- **RC/mavenLocal wiring:** `insider_sdk` must resolve to the App-Frames build without pulling the
-  App-Frames-less `16.1.0-rc1`. Mitigation: pin an explicit local version and verify the resolved
-  aar contains `InsiderAppFramesView` before building UI.
-- **Transitive deps:** `main` uses `insider_sdk = "+"` with several manual deps; the App Frames
-  build may or may not embed them. Mitigation: reconcile against the `feature/MOB-27585-test`
-  embed-deps config; restore any manual deps the local build doesn't provide so the app links.
+- **Local-aar wiring:** the `files("libs/insider-appframes.aar")` build must resolve the App-Frames
+  aar, not the App-Frames-less `16.1.0-rc1`. Mitigation: replace the `libs.insider.sdk` line
+  entirely, and verify the aar's `classes.jar` contains `InsiderAppFramesView` before building UI.
+  A bare aar carries no POM, so all runtime transitive deps are declared manually (see §2).
+- **Unpublished dependency:** because the aar is a local unpublished build, CI/other machines cannot
+  compile until the SDK ships a published App-Frames version. Documented in the build file comment;
+  the swap-back to a pinned `libs.insider.sdk` is a one-line change when that release lands.
+- **Reviewers/git:** `example/libs/*.aar` is git-ignored (no binary blob committed).
 - **Campaign availability on `qaautomatin1`:** if placements aren't configured, content won't
   render (callbacks still fire). Not a code defect.
