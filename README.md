@@ -345,7 +345,7 @@ shows:
   chip, surfacing every callback: `onLoadStarted`, `onLoadFinished`, `onLoadFailed`,
   `onHeightUpdateRequested`, `onFrameActionTriggered`, and `onDismissRequested`.
 - **Dismiss persistence (recommended pattern)** — on `onDismissRequested` the placement id is saved
-  to `SharedPreferences` (`util/DismissedFramesStore.kt`) and the frame is removed; it stays hidden
+  to `SharedPreferences` (`store/DismissedFramesStore.kt`) and the frame is removed; it stays hidden
   across relaunches. "Reset dismissed frames" clears the store.
 
 Each placement is created directly with `InsiderAppFramesView(context)`, then wired with
@@ -371,9 +371,10 @@ AndroidView(
 
 > **Note:** The App Frames API ships in a newer Insider SDK build than the version pinned in
 > `libs.versions.toml`. Point `insider_sdk` at an App-Frames-capable release (or a local build) to
-> run this screen. Placements only render content when the connected panel has App Frames campaigns
-> configured for those placement ids; otherwise each placement exercises the
-> `onLoadFailed(NO_FRAME_FOR_PLACEMENT)` path.
+> run this screen. Placements only render content when the connected panel has an App Frames
+> campaign whose audience matches the current device for that placement id; a placement with no
+> matching frame simply stays idle (no load callback fires), while a template-reported error surfaces
+> through `onLoadFailed`.
 
 ## InsiderWebView
 
