@@ -1,4 +1,4 @@
-package com.useinsider.kotlindemo.util
+package com.useinsider.kotlindemo.store
 
 import android.content.Context
 import android.content.SharedPreferences

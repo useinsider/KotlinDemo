@@ -46,8 +46,8 @@ import com.useinsider.kotlindemo.ui.theme.Figtree
 import com.useinsider.kotlindemo.ui.theme.InsiderBeige
 import com.useinsider.kotlindemo.ui.theme.InsiderTextDark
 import com.useinsider.kotlindemo.ui.theme.InsiderTextGray
+import com.useinsider.kotlindemo.model.FrameStatus
 import com.useinsider.kotlindemo.viewmodel.AppFramesViewModel
-import com.useinsider.kotlindemo.viewmodel.FrameStatus
 import org.json.JSONObject
 
 private const val LOG_TAG: String = "AppFramesDemo"
