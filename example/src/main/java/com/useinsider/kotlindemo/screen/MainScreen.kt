@@ -39,7 +39,8 @@ public fun MainScreen(
     viewModel: MainViewModel,
     onNavigateToCustomEvent: () -> Unit,
     onNavigateToCustomAttributes: () -> Unit,
-    onNavigateToAppCards: () -> Unit
+    onNavigateToAppCards: () -> Unit,
+    onNavigateToAppFrames: () -> Unit
 ): Unit {
     val callback: (String) -> Unit = { viewModel.updatePrintLabel(it) }
     val permissions = rememberRuntimePermissionRequester()
@@ -79,7 +80,8 @@ public fun MainScreen(
                             else callback("Geofence: location permission denied")
                         }
                     },
-                    ButtonItem("App Cards") { onNavigateToAppCards() }
+                    ButtonItem("App Cards") { onNavigateToAppCards() },
+                    ButtonItem("App Frames") { onNavigateToAppFrames() }
                 )
             )
             Spacer(Modifier.height(16.dp))
