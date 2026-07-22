@@ -1,43 +1,46 @@
 package com.useinsider.kotlindemo.viewmodel
 
-import android.app.Application
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.AndroidViewModel
-import com.useinsider.kotlindemo.model.FrameStatus
-import com.useinsider.kotlindemo.store.DismissedFramesStore
+import androidx.lifecycle.ViewModel
+import com.useinsider.kotlindemo.model.FrameSection
 
-public class AppFramesViewModel(application: Application) : AndroidViewModel(application) {
+/**
+ * Drives the runtime App Frames test screen: placement ids are added at runtime, each getting its
+ * own [FrameSection] tracked in display order. Listener callbacks resolve their section directly
+ * (the section is captured by the listener), and a template action is surfaced through
+ * [pendingActionPayload] as a dialog.
+ */
+public class AppFramesViewModel : ViewModel() {
 
-    private val store: DismissedFramesStore = DismissedFramesStore(application)
+    private var nextId: Long = 0
 
-    // Per-placement latest status. mutableStateMapOf → reads recompose only the affected chip.
-    private val statuses = mutableStateMapOf<String, FrameStatus>()
+    /** Sections in display order. */
+    public val sections: MutableList<FrameSection> = mutableStateListOf()
 
-    public var dismissed: Set<String> by mutableStateOf(store.dismissed())
+    /** Non-null while a template action payload is being shown in a dialog. */
+    public var pendingActionPayload: String? by mutableStateOf<String?>(null)
         private set
 
-    public fun statusFor(placementId: String): FrameStatus =
-        statuses[placementId] ?: FrameStatus.Idle
-
-    public fun updateStatus(placementId: String, status: FrameStatus): Unit {
-        statuses[placementId] = status
+    /** Adds a section for [placementId]; blanks are ignored. Duplicates are allowed on purpose. */
+    public fun addPlacement(placementId: String): Unit {
+        val trimmed = placementId.trim()
+        if (trimmed.isEmpty()) return
+        sections.add(FrameSection(nextId++, trimmed))
     }
 
-    public fun isDismissed(placementId: String): Boolean = dismissed.contains(placementId)
-
-    /** Recommended pattern: persist the dismiss and drop the frame from the UI. */
-    public fun persistDismiss(placementId: String): Unit {
-        store.add(placementId)
-        dismissed = store.dismissed()
-        statuses[placementId] = FrameStatus.Dismissed
+    /** Removes the section with [id] — used by Delete and by a template-driven dismiss. */
+    public fun remove(id: Long): Unit {
+        sections.removeAll { it.id == id }
     }
 
-    public fun resetDismissed(): Unit {
-        store.clear()
-        dismissed = store.dismissed()
-        statuses.clear()
+    public fun showAction(payload: String): Unit {
+        pendingActionPayload = payload
+    }
+
+    public fun dismissAction(): Unit {
+        pendingActionPayload = null
     }
 }
