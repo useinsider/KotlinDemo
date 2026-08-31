@@ -16,12 +16,18 @@ android {
 
         // TODO: Please change with your partner name.
         // Default stays the placeholder: committing a live partner here would silently point
-        // every demo build at a real account (and would revert 11c3979). The MOB-28339 load
-        // harness passes a real one for its run only:
+        // every demo build at a real account (and would revert 11c3979).
+        //
+        // Keep the declaration below as a bare string literal. mobileandroid's
+        // build-demo-application.yml rewrites it in place with a sed substitution, and sed
+        // exits 0 when it matches nothing — so any other shape here disables that step
+        // silently and ships a demo APK pointing at the placeholder account.
+        val partnerName = "partnername"
+        // Local override for the MOB-28339 load harness, which needs a real partner for one run:
         //   ./gradlew :example:connectedDebugAndroidTest -PinsiderPartnerName=qaautomation1
-        val partnerName = (project.findProperty("insiderPartnerName") as String?) ?: "partnername"
-        manifestPlaceholders["partner"] = partnerName
-        buildConfigField("String", "PARTNER_NAME", "\"$partnerName\"")
+        val resolvedPartnerName = (project.findProperty("insiderPartnerName") as String?) ?: partnerName
+        manifestPlaceholders["partner"] = resolvedPartnerName
+        buildConfigField("String", "PARTNER_NAME", "\"$resolvedPartnerName\"")
         manifestPlaceholders["googleAdsAppId"] = project.findProperty("GOOGLE_ADS_APP_ID") ?: ""
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
