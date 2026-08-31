@@ -15,10 +15,15 @@ android {
         versionName = "1.0.0"
 
         // TODO: Please change with your partner name.
-        val partnerName = "partnername"
+        // Default stays the placeholder: committing a live partner here would silently point
+        // every demo build at a real account (and would revert 11c3979). The MOB-28339 load
+        // harness passes a real one for its run only:
+        //   ./gradlew :example:connectedDebugAndroidTest -PinsiderPartnerName=qaautomation1
+        val partnerName = (project.findProperty("insiderPartnerName") as String?) ?: "partnername"
         manifestPlaceholders["partner"] = partnerName
         buildConfigField("String", "PARTNER_NAME", "\"$partnerName\"")
         manifestPlaceholders["googleAdsAppId"] = project.findProperty("GOOGLE_ADS_APP_ID") ?: ""
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     signingConfigs {
         create("release") {
@@ -69,7 +74,17 @@ dependencies {
     implementation(libs.coil.network.okhttp)
 
     //Required
-    implementation(libs.insider.sdk)
+    // MOB-28339: prefer a locally built, R8-MINIFIED AAR when one is present, so the load
+    // harness exercises the same bytes we ship rather than a source build. The file is
+    // gitignored (*.aar), so this falls back to the published artifact for everyone who has
+    // not built one — the demo keeps working unchanged. Transitive deps are declared below
+    // either way, which is why no POM is needed for the local path.
+    //
+    //   ../mobileandroid $ ./gradlew :insider:assembleRelease
+    //   cp insider/build/outputs/aar/insider-release.aar <here>/example/libs/
+    val localMinifiedSdk = file("libs/insider-release.aar")
+    if (localMinifiedSdk.exists()) implementation(files(localMinifiedSdk))
+    else implementation(libs.insider.sdk)
     implementation(libs.insider.webview)
     implementation(libs.webkit)
     implementation(libs.firebase.messaging)
@@ -84,4 +99,10 @@ dependencies {
     implementation(libs.play.services.location)
 
     debugImplementation(libs.androidx.ui.tooling)
+
+    // MOB-28339 load harness. Declared literally: the version catalog carries no test
+    // entries and this is the first test source set in this repo.
+    androidTestImplementation("androidx.test.ext:junit:1.2.1")
+    androidTestImplementation("androidx.test:runner:1.6.2")
+    androidTestImplementation("androidx.test:rules:1.6.1")
 }
