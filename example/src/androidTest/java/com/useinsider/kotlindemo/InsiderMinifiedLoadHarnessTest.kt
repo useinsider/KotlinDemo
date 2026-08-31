@@ -6,6 +6,7 @@ import android.util.Log
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.useinsider.insider.Insider
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -56,18 +57,24 @@ class InsiderMinifiedLoadHarnessTest {
 
         // (2) Load. Each event carries a unique index so a dropped or merged event would be
         // visible to a payload-level check later; here we only require the SDK not to fall over.
+        var submitted = 0
         val startedAt = System.nanoTime()
         for (i in 0 until EVENT_COUNT) {
-            Insider.Instance
-                .tagEvent(EVENT_NAME)
-                .addParameterWithString("idx", i.toString())
-                .build()
+            val event = Insider.Instance.tagEvent(EVENT_NAME)
+            assertNotNull("tagEvent must return a builder on every call", event)
+            event.addParameterWithString("idx", i.toString()).build()
+            submitted++
         }
         val elapsedMs = (System.nanoTime() - startedAt) / 1_000_000
 
-        assertTrue("the event loop must actually have run", elapsedMs >= 0)
-
         val perSecond = if (elapsedMs > 0) EVENT_COUNT * 1000L / elapsedMs else -1L
+
+        // Assert the EFFECT, not the timing. Two weaker forms were tried and both pass with an
+        // empty loop body, measured on this emulator: `elapsedMs >= 0` is true of any monotonic
+        // clock, and `perSecond > 0` survives too because an empty 10k loop still measures ~3 ms.
+        // Counting what the loop actually submitted is the only form that goes red when the work
+        // is removed.
+        assertEquals("every event must have been submitted", EVENT_COUNT, submitted)
         val summary = buildString {
             appendLine("events=$EVENT_COUNT")
             appendLine("elapsed_ms=$elapsedMs")
