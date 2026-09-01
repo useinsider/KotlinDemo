@@ -37,9 +37,28 @@ import org.junit.runner.RunWith
  * and a number invented here would be a guess wearing an assertion's clothes. The harness records;
  * the threshold comes from recorded runs.
  *
- * <p>And it will need several. Two back-to-back runs on the same emulator measured 3153 and 4012
- * events/sec — a ~27% spread with nothing changed. Any threshold derived from a single run would
- * flake. Whoever sets one should take the distribution over N runs, not the last number they saw.
+ * <p>And it will need several — measured on both runtimes, and the device is the worse of the two.
+ *
+ * <ul>
+ *   <li>Emulator (Pixel 7a AVD, Android 16), two back-to-back runs: 3153 and 4012 events/sec —
+ *       a ~27% spread with nothing changed.</li>
+ *   <li>Physical device (2510DPC44G, Android 16), four consecutive runs: 28490, 48780, 53191,
+ *       49751 events/sec — roughly an order of magnitude faster than the emulator, and an 87%
+ *       spread with nothing changed between runs.</li>
+ * </ul>
+ *
+ * <p>So the device does not rescue this number, it widens it: 87% against the emulator's 27%.
+ * Resist reading run 1 as a warmup artefact — AGP uninstalls the app after every
+ * `connectedAndroidTest` (verified: the package is absent from the device afterwards), so all four
+ * runs installed fresh and started equally cold. With n=4 there is no established plateau to
+ * warm up TO; what the data supports is "the spread is large", not a mechanism for it.
+ *
+ * <p>And there is no better number to defer to yet. The `:benchmark` module cannot supply a
+ * dispatch threshold today on either runtime: its dispatch benchmark is @Ignore'd as unmeasurable,
+ * its one live benchmark times builder allocation rather than the 10k-event dispatch this harness
+ * times, its emulator figure needed `suppressErrors=EMULATOR` and came back at CoV 0.83, and it
+ * cannot start at all on the device. Whoever wants a gate has to establish the distribution first.
+ * This harness's number is a survival signal, not a gate.
  */
 @RunWith(AndroidJUnit4::class)
 class InsiderMinifiedLoadHarnessTest {

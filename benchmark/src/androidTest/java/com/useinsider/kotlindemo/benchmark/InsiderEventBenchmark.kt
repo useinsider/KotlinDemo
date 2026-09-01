@@ -50,6 +50,28 @@ import org.junit.runner.RunWith
  * same 8.17 s window, retains MORE per-event state, and reaches OOM sooner rather than later. The
  * device is not the fix.
  *
+ * <p><b>The device was then tried anyway, and could not run this module at all.</b> Two attempts
+ * on `2510DPC44G` (HyperOS, Android 16) died before the first iteration:
+ *
+ * <pre>
+ * java.lang.IllegalStateException: UiAutomationService ...Stub$Proxy@5717c87 already registered!
+ *     at androidx.benchmark.ShellImpl.&lt;clinit&gt;(Shell.kt:689)
+ * </pre>
+ *
+ * <p>[androidx.benchmark.ShellImpl] takes `Instrumentation.getUiAutomation()` in its static
+ * initialiser, and that device already holds a UiAutomation registration — the same proxy identity
+ * across both attempts, so it outlives the instrumentation process rather than leaking per-run.
+ * `accessibility_enabled` reads `1` with an empty `enabled_accessibility_services`. Clearing it
+ * needs a reboot of the developer's own phone, which is not something CI or a test harness can
+ * assume. Consequence for whoever picks this up: <b>this module's numbers come from the emulator</b>,
+ * and a device leg needs a device whose UiAutomation slot is free. The OOM reasoning above is
+ * therefore still an argument from the emulator artefacts, NOT a device measurement — it has not
+ * been confirmed on hardware, because no run on hardware ever started.
+ *
+ * <p>The `:example` load harness is unaffected (plain `AndroidJUnitRunner`, no UiAutomation) and
+ * ran green on that same device — see [com.useinsider.kotlindemo.InsiderMinifiedLoadHarnessTest]
+ * for the device-vs-emulator throughput figures it produced.
+ *
  * <p>The distribution was already unusable before the OOM. Against a body of 50-120 us the run
  * recorded `timeNs[10:20]: ... 1038981500` (1.04 s) and `timeNs[30:40]: ... 6031167` (6 ms) — GC
  * pauses for the accumulating state. min/median/max therefore move with iteration count, which is
