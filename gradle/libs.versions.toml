@@ -22,6 +22,7 @@ security_crypto = "1.1.0"
 work = "2.11.2"
 navigationCompose = "2.9.8"
 coil = "3.4.0"
+benchmark = "1.5.0-rc02"
 
 
 [libraries]
@@ -53,9 +54,14 @@ androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx"
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
 coil-network-okhttp = { module = "io.coil-kt.coil3:coil-network-okhttp", version.ref = "coil" }
+benchmark-junit4 = { module = "androidx.benchmark:benchmark-junit4", version.ref = "benchmark" }
+androidx-test-ext-junit = { module = "androidx.test.ext:junit", version = "1.2.1" }
+androidx-test-runner = { module = "androidx.test:runner", version = "1.6.2" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
+android-library = { id = "com.android.library", version.ref = "agp" }
+benchmark = { id = "androidx.benchmark", version.ref = "benchmark" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 google-services = { id = "com.google.gms.google-services", version.ref = "play_services" }
 agconnect-services = { id = "com.huawei.agconnect", version.ref = "agconnect_service" }
