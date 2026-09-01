@@ -108,7 +108,7 @@ dependencies {
 
     // MOB-28339 load harness. Declared literally: the version catalog carries no test
     // entries and this is the first test source set in this repo.
-    androidTestImplementation("androidx.test.ext:junit:1.2.1")
-    androidTestImplementation("androidx.test:runner:1.6.2")
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation("androidx.test:rules:1.6.1")
 }

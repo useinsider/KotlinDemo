@@ -6,8 +6,10 @@ import androidx.benchmark.junit4.measureRepeated
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.useinsider.insider.Insider
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -30,23 +32,34 @@ import org.junit.runner.RunWith
  * where the runner writes a JSON report. That JSON is the baseline artefact; the harness's logcat
  * line never was one.
  *
- * <p><b>A physical device is required. This is measured, not assumed.</b> Two runs on
- * `emulator-5554` (Pixel 7a AVD, Android 16):
+ * <p><b>Measured, and it changed the design.</b> On `emulator-5554` (Pixel 7a AVD, Android 16):
  *
  * <ul>
  *   <li>Default config: both benchmarks fail with `ERRORS (not suppressed): EMULATOR`. The runner
- *       refuses to emit a number it cannot stand behind. This is correct behaviour and the module
- *       is deliberately left in that state — do NOT add a blanket suppression.</li>
+ *       refuses to emit a number it cannot stand behind. Correct behaviour — the module is left in
+ *       that strict state on purpose, so do NOT add a blanket suppression.</li>
  *   <li>Forced with `-Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.suppressErrors=EMULATOR`:
- *       the run reaches instrumentation and then dies with `OutOfMemoryError` after ~5 minutes, so
- *       no JSON is produced either way. Whether that OOM is an emulator heap limit or something in
- *       the SDK's per-event retention is UNRESOLVED — it cannot be attributed from an environment
- *       the tool already declared unmeasurable. Settle it on a device before drawing a conclusion.</li>
+ *       the dispatching benchmark reached `Warmup: t=8.170, iter=23793`, then died with
+ *       `OutOfMemoryError` at `target footprint 201326592`. No JSON was produced.</li>
  * </ul>
  *
- * <p>The contrast with the hand-written harness is the point of this module: on that same emulator
- * the harness happily reported 3153-4012 events/sec. It had no way to know the environment could
- * not support the measurement. This one does.
+ * <p>An earlier version of this file blamed that OOM on the emulator and told the next engineer to
+ * "settle it on a device". <b>That was wrong, and the run artefacts refute it.</b> Warmup is
+ * TIME-boxed, not iteration-boxed: a faster physical device executes MORE iterations inside the
+ * same 8.17 s window, retains MORE per-event state, and reaches OOM sooner rather than later. The
+ * device is not the fix.
+ *
+ * <p>The distribution was already unusable before the OOM. Against a body of 50-120 us the run
+ * recorded `timeNs[10:20]: ... 1038981500` (1.04 s) and `timeNs[30:40]: ... 6031167` (6 ms) — GC
+ * pauses for the accumulating state. min/median/max therefore move with iteration count, which is
+ * precisely the un-gateable number this module was created to replace.
+ *
+ * <p><b>Consequence: dispatching is not benchmarkable in steady state today.</b>
+ * `tagEvent(...).build()` retains per-event state that the SDK releases only at session stop, and
+ * there is no public reset hook to call from `runWithTimingDisabled`. That is a finding about the
+ * SDK's testability, not an emulator artefact, so [tagEventBuild] is `@Ignore`d with that reason
+ * rather than deleted or left to fail. [tagEventWithoutBuild] measures the allocation-only path,
+ * which IS steady-state, and is the benchmark to run.
  *
  * <p><b>Not a correctness test.</b> Nothing here asserts SDK behaviour beyond the SDK resolving
  * and initialising — [com.useinsider.kotlindemo.InsiderMinifiedLoadHarnessTest] owns that. If this
@@ -58,6 +71,7 @@ class InsiderEventBenchmark {
     private companion object {
         const val EVENT_NAME = "mob28339_benchmark_probe"
         const val PARAMETER_KEY = "idx"
+        const val PLACEHOLDER_PARTNER = "partnername"
     }
 
     @get:Rule
@@ -69,19 +83,35 @@ class InsiderEventBenchmark {
             .targetContext
             .applicationContext as Application
 
-        // The benchmark module has no ExampleApplication, so initialise here. init is idempotent
-        // across the class; measuring it is a separate benchmark below.
-        Insider.Instance.init(application, BuildConfig.INSIDER_PARTNER_NAME)
+        // Fail fast rather than silently measuring the placeholder path. The deliverable here IS
+        // the number, so a run against a non-existent partner would produce a baseline describing
+        // whatever a degraded init leaves behind.
+        assertNotEquals(
+            "pass -PinsiderPartnerName=<partner>; the placeholder measures a degraded init path",
+            PLACEHOLDER_PARTNER,
+            BuildConfig.PARTNER_NAME
+        )
+
+        // On the main thread, the way ExampleApplication and real integrators do it. @Before runs
+        // on the instrumentation thread, and SDK init registers process-lifecycle observers that
+        // expect the main looper; the SDK's defensive catches would swallow the difference and
+        // leave a partially initialised SDK for the benchmark to measure.
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            Insider.Instance.init(application, BuildConfig.PARTNER_NAME)
+        }
 
         assertNotNull("Insider.Instance must resolve from the minified AAR", Insider.Instance)
     }
 
     /**
-     * The operation the load harness loops 10,000 times, measured properly.
+     * Disabled, with evidence: this cannot produce a steady-state measurement today.
      *
-     * <p>Comparable across runs in a way `events/sec` from a wall-clock loop is not: same warmup,
-     * same iteration policy, and the reported spread is the measurement's own, not the platform's.
+     * <p>See the class KDoc. `build()` retains state released only at session stop, warmup is
+     * time-boxed, and the recorded distribution was dominated by GC pauses before the run OOMed.
+     * Re-enable once the SDK exposes a reset hook that can be called under
+     * `runWithTimingDisabled` — at that point this becomes the primary benchmark.
      */
+    @Ignore("Retains per-event state with no public reset; OOMs and GC-contaminates the distribution")
     @Test
     fun tagEventBuild() {
         benchmarkRule.measureRepeated {
@@ -91,10 +121,11 @@ class InsiderEventBenchmark {
     }
 
     /**
-     * Builder construction alone, so a regression can be attributed.
+     * Builder construction alone — the one path that is steady-state, and therefore the benchmark
+     * that actually yields a baseline.
      *
-     * <p>Without this, a slowdown in [tagEventBuild] is ambiguous between "constructing the event
-     * got slower" and "dispatching it got slower".
+     * <p>Allocates and discards; nothing is retained across iterations, so the reported spread is
+     * the measurement's own rather than the collector's.
      */
     @Test
     fun tagEventWithoutBuild() {

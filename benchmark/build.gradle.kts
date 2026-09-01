@@ -19,7 +19,7 @@ android {
         val partnerName = "partnername"
         val resolvedPartnerName =
             (project.findProperty("insiderPartnerName") as String?) ?: partnerName
-        buildConfigField("String", "INSIDER_PARTNER_NAME", "\"$resolvedPartnerName\"")
+        buildConfigField("String", "PARTNER_NAME", "\"$resolvedPartnerName\"")
         // The SDK manifest declares a deep-link scheme via ${'$'}{partner}; without this the
         // androidTest manifest merge fails.
         manifestPlaceholders["partner"] = resolvedPartnerName
@@ -52,8 +52,10 @@ android {
 }
 
 dependencies {
-    // Same local-AAR escape hatch the example module uses, so the benchmark measures the
-    // R8-minified artefact we actually ship rather than whatever is published.
+    // Same local-AAR escape hatch the example module uses. The artefact is minified because the
+    // AAR arrives that way from upstream — NOT because of this module's isMinifyEnabled, which
+    // only affects this module's own (empty) library variant. Verified in build/intermediates:
+    // there is no minifyReleaseAndroidTestWithR8 task.
     val localMinifiedSdk = file("../example/libs/insider-release.aar")
 
     if (localMinifiedSdk.exists()) {
