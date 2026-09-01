@@ -9,26 +9,23 @@ android {
 
     defaultConfig {
         minSdk = 24
-        // AndroidBenchmarkRunner, not the plain AndroidJUnitRunner: it is what performs the
-        // warmup, locks clocks where possible, and reports the per-iteration distribution.
+        // AndroidBenchmarkRunner performs the warmup and reports the distribution; the plain
+        // AndroidJUnitRunner does neither.
         testInstrumentationRunner = "androidx.benchmark.junit4.AndroidBenchmarkRunner"
 
-        // Same override the load harness uses; the committed default stays a placeholder so a
-        // real partner is never baked into the repo:
-        //   ./gradlew :benchmark:connectedReleaseAndroidTest -PinsiderPartnerName=qaautomation1
+        // Committed default stays a placeholder so no real partner is baked into the repo:
+        //   ./gradlew :benchmark:connectedReleaseAndroidTest -PinsiderPartnerName=<partner>
         val partnerName = "partnername"
         // takeIf(isNotBlank): `-PinsiderPartnerName=$VAR` with VAR unset expands to an EMPTY
-        // string, not an absent property, so a plain `?:` would leave PARTNER_NAME="" and the
-        // benchmark would measure a degraded init while every guard stayed green.
+        // string, not an absent property, so a plain `?:` would leave PARTNER_NAME="".
         val resolvedPartnerName =
             (project.findProperty("insiderPartnerName") as String?)?.takeIf { it.isNotBlank() }
                 ?: partnerName
         buildConfigField("String", "PARTNER_NAME", "\"$resolvedPartnerName\"")
-        // The SDK manifest declares a deep-link scheme via ${'$'}{partner}; without this the
-        // androidTest manifest merge fails.
+        // The SDK manifest declares a deep-link scheme via ${'$'}{partner}; the androidTest
+        // manifest merge fails without it.
         manifestPlaceholders["partner"] = resolvedPartnerName
-        // Single source for the guard in InsiderEventBenchmark: re-hardcoding the literal there
-        // would let the two drift and silently re-admit the placeholder build.
+        // Single source for the guard in InsiderEventBenchmark, so the two cannot drift.
         buildConfigField("String", "PLACEHOLDER_PARTNER_NAME", "\"$partnerName\"")
     }
 
@@ -36,10 +33,8 @@ android {
         buildConfig = true
     }
 
-    // Microbenchmarks must run against a non-debuggable, minified build. A debuggable app is
-    // interpreted rather than JIT-compiled in places, which is exactly the distortion the
-    // MOB-28339 harness suffered from: its ~27% run-to-run spread is what hand-timing a
-    // debuggable loop looks like.
+    // Microbenchmarks must run against a non-debuggable, minified build; a debuggable app is
+    // interpreted rather than JIT-compiled in places.
     testBuildType = "release"
 
     buildTypes {
@@ -59,24 +54,21 @@ android {
 }
 
 dependencies {
-    // Same opt-in as :example, and for the same reason: keying off file existence would make
-    // the measured artefact depend on whether someone had hand-copied a gitignored AAR, with
-    // nothing in the report saying which bytes were measured.
+    // Same opt-in as :example: keying off file existence would make the measured artefact
+    // depend on what someone had copied in, with nothing in the report saying which bytes ran.
     val localMinifiedSdk = file("../example/libs/insider-release.aar")
 
     if (project.hasProperty("useLocalInsiderAar")) {
         require(localMinifiedSdk.exists()) {
             "-PuseLocalInsiderAar was passed but ${localMinifiedSdk.path} does not exist"
         }
-        logger.lifecycle("MOB-28339: benchmarking LOCAL minified SDK ${localMinifiedSdk.path}")
+        logger.lifecycle("Benchmarking LOCAL minified SDK ${localMinifiedSdk.path}")
         androidTestImplementation(files(localMinifiedSdk))
     } else {
         androidTestImplementation(libs.insider.sdk)
     }
 
-    // The local AAR carries no POM, so the SDK's own dependencies must be declared here the
-    // same way :example declares them. Measured: without androidx.core the benchmark APK dies
-    // on NoClassDefFoundError for androidx/core/util/Supplier before any measurement runs.
+    // The local AAR carries no POM, so the SDK's own dependencies are declared here explicitly.
     androidTestImplementation(libs.androidx.core.ktx)
     androidTestImplementation(libs.lifecycle.process)
     androidTestImplementation(libs.androidx.work.runtime)

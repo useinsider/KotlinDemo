@@ -23,10 +23,10 @@ android {
         // exits 0 when it matches nothing — so any other shape here disables that step
         // silently and ships a demo APK pointing at the placeholder account.
         val partnerName = "partnername"
-        // Local override for the MOB-28339 load harness, which needs a real partner for one run:
-        //   ./gradlew :example:connectedDebugAndroidTest -PinsiderPartnerName=qaautomation1
-        // takeIf(isNotBlank) mirrors :benchmark — `-PinsiderPartnerName=$VAR` with VAR unset
-        // expands to an EMPTY string, not an absent property, so a bare `?:` never fires.
+        // Override for the load harness, which needs a real partner:
+        //   ./gradlew :example:connectedDebugAndroidTest -PinsiderPartnerName=<partner>
+        // takeIf(isNotBlank): `-PinsiderPartnerName=$VAR` with VAR unset expands to an EMPTY
+        // string, not an absent property, so a bare `?:` would never fire.
         val resolvedPartnerName =
             (project.findProperty("insiderPartnerName") as String?)?.takeIf { it.isNotBlank() }
                 ?: partnerName
@@ -85,15 +85,11 @@ dependencies {
     implementation(libs.coil.network.okhttp)
 
     //Required
-    // MOB-28339: the load harness wants the R8-MINIFIED AAR we actually ship, not a source
-    // build. That is opt-in ON PURPOSE and must NOT key off mere file existence: this is
-    // `implementation`, so it reshapes EVERY variant including the signed release APK that
-    // ./build.sh produces. insider-release.aar is gitignored (*.aar), so a file-existence
-    // check would make the same commit ship different bytes depending on whether someone had
-    // hand-copied an AAR — with nothing in the build output saying which.
+    // Opt-in link against a locally built, R8-minified AAR instead of the published SDK. The
+    // opt-in is a property, never file existence: this is `implementation`, so it reshapes every
+    // variant including the signed release APK, and *.aar is gitignored — keying off the file
+    // would let one commit ship different bytes depending on what someone had copied in.
     //
-    //   ../mobileandroid $ ./gradlew :insider:assembleRelease
-    //   cp insider/build/outputs/aar/insider-release.aar <here>/example/libs/
     //   ./gradlew :example:connectedDebugAndroidTest -PuseLocalInsiderAar -PinsiderPartnerName=<partner>
     val localMinifiedSdk = file("libs/insider-release.aar")
     val useLocalInsiderAar = project.hasProperty("useLocalInsiderAar")
@@ -102,7 +98,7 @@ dependencies {
         require(localMinifiedSdk.exists()) {
             "-PuseLocalInsiderAar was passed but ${localMinifiedSdk.path} does not exist"
         }
-        logger.lifecycle("MOB-28339: linking LOCAL minified SDK ${localMinifiedSdk.path}")
+        logger.lifecycle("Linking LOCAL minified SDK ${localMinifiedSdk.path}")
         implementation(files(localMinifiedSdk))
     } else {
         implementation(libs.insider.sdk)
@@ -123,7 +119,7 @@ dependencies {
 
     debugImplementation(libs.androidx.ui.tooling)
 
-    // MOB-28339 load harness; declared via the version catalog like every other dependency.
+    // Load harness (src/androidTest).
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.test.rules)
