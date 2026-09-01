@@ -8,6 +8,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.useinsider.insider.Insider
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Rule
@@ -71,7 +72,6 @@ class InsiderEventBenchmark {
     private companion object {
         const val EVENT_NAME = "mob28339_benchmark_probe"
         const val PARAMETER_KEY = "idx"
-        const val PLACEHOLDER_PARTNER = "partnername"
     }
 
     @get:Rule
@@ -88,8 +88,12 @@ class InsiderEventBenchmark {
         // whatever a degraded init leaves behind.
         assertNotEquals(
             "pass -PinsiderPartnerName=<partner>; the placeholder measures a degraded init path",
-            PLACEHOLDER_PARTNER,
+            BuildConfig.PLACEHOLDER_PARTNER_NAME,
             BuildConfig.PARTNER_NAME
+        )
+        assertTrue(
+            "partner name is blank; -PinsiderPartnerName= with an unset variable resolves to empty",
+            BuildConfig.PARTNER_NAME.isNotBlank()
         )
 
         // On the main thread, the way ExampleApplication and real integrators do it. @Before runs

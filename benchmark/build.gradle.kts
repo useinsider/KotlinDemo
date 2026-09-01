@@ -17,12 +17,19 @@ android {
         // real partner is never baked into the repo:
         //   ./gradlew :benchmark:connectedReleaseAndroidTest -PinsiderPartnerName=qaautomation1
         val partnerName = "partnername"
+        // takeIf(isNotBlank): `-PinsiderPartnerName=$VAR` with VAR unset expands to an EMPTY
+        // string, not an absent property, so a plain `?:` would leave PARTNER_NAME="" and the
+        // benchmark would measure a degraded init while every guard stayed green.
         val resolvedPartnerName =
-            (project.findProperty("insiderPartnerName") as String?) ?: partnerName
+            (project.findProperty("insiderPartnerName") as String?)?.takeIf { it.isNotBlank() }
+                ?: partnerName
         buildConfigField("String", "PARTNER_NAME", "\"$resolvedPartnerName\"")
         // The SDK manifest declares a deep-link scheme via ${'$'}{partner}; without this the
         // androidTest manifest merge fails.
         manifestPlaceholders["partner"] = resolvedPartnerName
+        // Single source for the guard in InsiderEventBenchmark: re-hardcoding the literal there
+        // would let the two drift and silently re-admit the placeholder build.
+        buildConfigField("String", "PLACEHOLDER_PARTNER_NAME", "\"$partnerName\"")
     }
 
     buildFeatures {
