@@ -59,13 +59,16 @@ android {
 }
 
 dependencies {
-    // Same local-AAR escape hatch the example module uses. The artefact is minified because the
-    // AAR arrives that way from upstream — NOT because of this module's isMinifyEnabled, which
-    // only affects this module's own (empty) library variant. Verified in build/intermediates:
-    // there is no minifyReleaseAndroidTestWithR8 task.
+    // Same opt-in as :example, and for the same reason: keying off file existence would make
+    // the measured artefact depend on whether someone had hand-copied a gitignored AAR, with
+    // nothing in the report saying which bytes were measured.
     val localMinifiedSdk = file("../example/libs/insider-release.aar")
 
-    if (localMinifiedSdk.exists()) {
+    if (project.hasProperty("useLocalInsiderAar")) {
+        require(localMinifiedSdk.exists()) {
+            "-PuseLocalInsiderAar was passed but ${localMinifiedSdk.path} does not exist"
+        }
+        logger.lifecycle("MOB-28339: benchmarking LOCAL minified SDK ${localMinifiedSdk.path}")
         androidTestImplementation(files(localMinifiedSdk))
     } else {
         androidTestImplementation(libs.insider.sdk)

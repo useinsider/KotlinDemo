@@ -7,6 +7,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.useinsider.insider.Insider
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -54,6 +55,19 @@ class InsiderMinifiedLoadHarnessTest {
         // (1) Smoke. Insider.Instance is a kept static on a kept class; if R8 had removed either,
         // the class would not resolve and this line would throw NoClassDefFoundError.
         assertNotNull("Insider.Instance must resolve from the minified AAR", Insider.Instance)
+
+        // ExampleApplication calls init() unconditionally, so the placeholder does NOT take the
+        // uninitialised no-op path -- events are processed for real against a bogus partner. That
+        // is worse for a baseline, not better: the numbers look valid and describe nothing.
+        assertNotEquals(
+            "pass -PinsiderPartnerName=<partner>; the placeholder records a bogus-partner baseline",
+            BuildConfig.PLACEHOLDER_PARTNER_NAME,
+            BuildConfig.PARTNER_NAME
+        )
+        assertTrue(
+            "partner name is blank; -PinsiderPartnerName= with an unset variable resolves to empty",
+            BuildConfig.PARTNER_NAME.isNotBlank()
+        )
 
         // (2) Load. Each event carries a unique index so a dropped or merged event would be
         // visible to a payload-level check later; here we only require the SDK not to fall over.
