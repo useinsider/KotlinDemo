@@ -15,10 +15,26 @@ android {
         versionName = "1.0.0"
 
         // TODO: Please change with your partner name.
+        // Default stays the placeholder: committing a live partner here would silently point
+        // every demo build at a real account (and would revert 11c3979).
+        //
+        // Keep the declaration below as a bare string literal. mobileandroid's
+        // build-demo-application.yml rewrites it in place with a sed substitution, and sed
+        // exits 0 when it matches nothing — so any other shape here disables that step
+        // silently and ships a demo APK pointing at the placeholder account.
         val partnerName = "partnername"
-        manifestPlaceholders["partner"] = partnerName
-        buildConfigField("String", "PARTNER_NAME", "\"$partnerName\"")
+        // Override for the load harness, which needs a real partner:
+        //   ./gradlew :example:connectedDebugAndroidTest -PinsiderPartnerName=<partner>
+        // takeIf(isNotBlank): `-PinsiderPartnerName=$VAR` with VAR unset expands to an EMPTY
+        // string, not an absent property, so a bare `?:` would never fire.
+        val resolvedPartnerName =
+            (project.findProperty("insiderPartnerName") as String?)?.takeIf { it.isNotBlank() }
+                ?: partnerName
+        manifestPlaceholders["partner"] = resolvedPartnerName
+        buildConfigField("String", "PARTNER_NAME", "\"$resolvedPartnerName\"")
+        buildConfigField("String", "PLACEHOLDER_PARTNER_NAME", "\"$partnerName\"")
         manifestPlaceholders["googleAdsAppId"] = project.findProperty("GOOGLE_ADS_APP_ID") ?: ""
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     signingConfigs {
         create("release") {
@@ -69,7 +85,25 @@ dependencies {
     implementation(libs.coil.network.okhttp)
 
     //Required
-    implementation(libs.insider.sdk)
+    // Opt-in link against a locally built, R8-minified AAR instead of the published SDK. The
+    // opt-in is a property, never file existence: this is `implementation`, so it reshapes every
+    // variant including the signed release APK, and *.aar is gitignored — keying off the file
+    // would let one commit ship different bytes depending on what someone had copied in.
+    //
+    //   ./gradlew :example:connectedDebugAndroidTest -PuseLocalInsiderAar -PinsiderPartnerName=<partner>
+    val localMinifiedSdk = file("libs/insider-release.aar")
+    val useLocalInsiderAar = project.hasProperty("useLocalInsiderAar")
+
+    if (useLocalInsiderAar) {
+        require(localMinifiedSdk.exists()) {
+            "-PuseLocalInsiderAar was passed but ${localMinifiedSdk.path} does not exist"
+        }
+        logger.lifecycle("Linking LOCAL minified SDK ${localMinifiedSdk.path}")
+        implementation(files(localMinifiedSdk))
+    } else {
+        implementation(libs.insider.sdk)
+    }
+
     implementation(libs.insider.webview)
     implementation(libs.webkit)
     implementation(libs.firebase.messaging)
@@ -84,4 +118,9 @@ dependencies {
     implementation(libs.play.services.location)
 
     debugImplementation(libs.androidx.ui.tooling)
+
+    // Load harness (src/androidTest).
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.test.rules)
 }
