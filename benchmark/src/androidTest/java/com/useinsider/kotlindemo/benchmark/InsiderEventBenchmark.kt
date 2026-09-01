@@ -50,8 +50,26 @@ import org.junit.runner.RunWith
  * same 8.17 s window, retains MORE per-event state, and reaches OOM sooner rather than later. The
  * device is not the fix.
  *
- * <p><b>The device was then tried anyway, and could not run this module at all.</b> Two attempts
- * on `2510DPC44G` (HyperOS, Android 16) died before the first iteration:
+ * <p><b>Then it was measured on hardware, and the reasoning held.</b> On `2510DPC44G` (POCO,
+ * Android 16, 8 cores) [tagEventBuild] OOMs too — sooner, and against a LARGER heap:
+ *
+ * <pre>
+ * OutOfMemoryError: Failed to allocate a 16 byte allocation ...
+ *     target footprint 268435456, growth limit 268435456
+ *     at com.useinsider.insider.e4.c(r8-map-id-32a48b...)
+ * </pre>
+ *
+ * <p>The emulator died at a 192 MB footprint after roughly five minutes; the device died at
+ * 256 MB inside a 24-second build. What that measures is: a faster runtime, given MORE heap
+ * headroom, still OOMs — and in a fraction of the wall-clock. That settles the practical question
+ * ("settle it on a device" was never the fix) without settling the mechanism: it is consistent
+ * with the time-boxed warmup argument above, but the device's `Warmup: t=…, iter=…` line was never
+ * captured (the process is killed before it prints), so the emulator's `iter=23793` remains the
+ * only concrete evidence for the mechanism, and the mechanism stays an inference. The stack frame
+ * is inside the minified SDK, which does locate the retention.
+ *
+ * <p><b>Getting there needed one thing worth writing down.</b> Three attempts on that device first
+ * failed before any iteration ran:
  *
  * <pre>
  * java.lang.IllegalStateException: UiAutomationService ...Stub$Proxy@5717c87 already registered!
@@ -59,18 +77,22 @@ import org.junit.runner.RunWith
  * </pre>
  *
  * <p>[androidx.benchmark.ShellImpl] takes `Instrumentation.getUiAutomation()` in its static
- * initialiser, and that device already holds a UiAutomation registration — the same proxy identity
- * across both attempts, so it outlives the instrumentation process rather than leaking per-run.
- * `accessibility_enabled` reads `1` with an empty `enabled_accessibility_services`. Clearing it
- * needs a reboot of the developer's own phone, which is not something CI or a test harness can
- * assume. Consequence for whoever picks this up: <b>this module's numbers come from the emulator</b>,
- * and a device leg needs a device whose UiAutomation slot is free. The OOM reasoning above is
- * therefore still an argument from the emulator artefacts, NOT a device measurement — it has not
- * been confirmed on hardware, because no run on hardware ever started.
+ * initialiser, and a stale registration was holding the slot — the SAME identity hashcode across
+ * all three attempts, which is what identifies it as one surviving object rather than a per-run
+ * leak. A full reboot cleared it (`/proc/uptime` is the check that the reboot really happened; a
+ * vendor "restart" that leaves uptime running has not). If this module fails at `ShellImpl` on a
+ * device, that is the fix — nothing in this module needs changing.
  *
- * <p>The `:example` load harness is unaffected (plain `AndroidJUnitRunner`, no UiAutomation) and
- * ran green on that same device — see [com.useinsider.kotlindemo.InsiderMinifiedLoadHarnessTest]
- * for the device-vs-emulator throughput figures it produced.
+ * <p><b>Measured baseline, device.</b> Post-reboot, [tagEventWithoutBuild] on `2510DPC44G`:
+ * min 61.5 ns, median 75.5 ns, max 161.7 ns, 2 allocations, <b>CoV 0.294</b> — and, unlike the
+ * emulator, with no `suppressErrors` and no `EMULATOR_` name prefix, so the runner stands behind
+ * it. The emulator's figure for the same benchmark was median 907 ns at CoV 0.829. That is the
+ * gap between a number you can gate on and one you cannot; run this module on hardware.
+ *
+ * <p>Still open: no baseline exists for event DISPATCH, only for builder construction, because
+ * [tagEventBuild] remains unmeasurable for the reason above. See
+ * `InsiderMinifiedLoadHarnessTest` in `:example` for the dispatch-throughput figures — those come
+ * from a hand-timed loop and carry an 87% device spread, which is why they are not a gate either.
  *
  * <p>The distribution was already unusable before the OOM. Against a body of 50-120 us the run
  * recorded `timeNs[10:20]: ... 1038981500` (1.04 s) and `timeNs[30:40]: ... 6031167` (6 ms) — GC

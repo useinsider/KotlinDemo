@@ -53,11 +53,12 @@ import org.junit.runner.RunWith
  * runs installed fresh and started equally cold. With n=4 there is no established plateau to
  * warm up TO; what the data supports is "the spread is large", not a mechanism for it.
  *
- * <p>And there is no better number to defer to yet. The `:benchmark` module cannot supply a
- * dispatch threshold today on either runtime: its dispatch benchmark is @Ignore'd as unmeasurable,
- * its one live benchmark times builder allocation rather than the 10k-event dispatch this harness
- * times, its emulator figure needed `suppressErrors=EMULATOR` and came back at CoV 0.83, and it
- * cannot start at all on the device. Whoever wants a gate has to establish the distribution first.
+ * <p>And there is no better number to defer to yet — though `:benchmark` now has a good one for a
+ * NARROWER operation. On the same device it measures builder construction at median 75.5 ns with
+ * CoV 0.294 (the emulator: 907 ns at CoV 0.83), which is gateable. It still cannot supply a
+ * DISPATCH threshold: its dispatch benchmark is @Ignore'd because it OOMs — confirmed on that
+ * device at a 256 MB footprint — so the 10k-event path this harness times has no benchmark-grade
+ * number on any runtime. Whoever wants a gate on dispatch has to establish the distribution first.
  * This harness's number is a survival signal, not a gate.
  */
 @RunWith(AndroidJUnit4::class)
