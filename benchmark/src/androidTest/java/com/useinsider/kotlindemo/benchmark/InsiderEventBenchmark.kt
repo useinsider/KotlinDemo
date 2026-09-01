@@ -33,7 +33,9 @@ import org.junit.runner.RunWith
  *
  * If a run dies in `androidx.benchmark.ShellImpl` with `UiAutomationService ... already
  * registered`, a stale UiAutomation registration is holding the slot; reboot the device. Check
- * `/proc/uptime` afterwards, since a vendor "restart" may leave the kernel running.
+ * `/proc/uptime` afterwards, since a vendor "restart" may leave the kernel running. `am force-stop`
+ * and `pm clear` do not clear it — the registration outlives the app process. A benchmark process
+ * that CRASHES is what leaves one behind, so re-enabling [tagEventBuild] costs the next run too.
  */
 @RunWith(AndroidJUnit4::class)
 class InsiderEventBenchmark {
