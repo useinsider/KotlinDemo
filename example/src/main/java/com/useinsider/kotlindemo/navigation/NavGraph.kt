@@ -6,10 +6,12 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.useinsider.kotlindemo.screen.AppCardsScreen
+import com.useinsider.kotlindemo.screen.AppFramesScreen
 import com.useinsider.kotlindemo.screen.CustomEventScreen
 import com.useinsider.kotlindemo.screen.CustomUserAttributesScreen
 import com.useinsider.kotlindemo.screen.MainScreen
 import com.useinsider.kotlindemo.viewmodel.AppCardsViewModel
+import com.useinsider.kotlindemo.viewmodel.AppFramesViewModel
 import com.useinsider.kotlindemo.viewmodel.CustomAttributesViewModel
 import com.useinsider.kotlindemo.viewmodel.CustomEventViewModel
 import com.useinsider.kotlindemo.viewmodel.MainViewModel
@@ -19,6 +21,7 @@ public object Routes {
     public const val CUSTOM_EVENT: String = "custom_event"
     public const val CUSTOM_USER_ATTRIBUTES: String = "custom_user_attributes"
     public const val APP_CARDS: String = "app_cards"
+    public const val APP_FRAMES: String = "app_frames"
 }
 
 @Composable
@@ -31,7 +34,8 @@ public fun AppNavGraph(navController: NavHostController): Unit {
                 viewModel = mainViewModel,
                 onNavigateToCustomEvent = { navController.navigate(Routes.CUSTOM_EVENT) },
                 onNavigateToCustomAttributes = { navController.navigate(Routes.CUSTOM_USER_ATTRIBUTES) },
-                onNavigateToAppCards = { navController.navigate(Routes.APP_CARDS) }
+                onNavigateToAppCards = { navController.navigate(Routes.APP_CARDS) },
+                onNavigateToAppFrames = { navController.navigate(Routes.APP_FRAMES) }
             )
         }
         composable(Routes.CUSTOM_EVENT) {
@@ -49,6 +53,13 @@ public fun AppNavGraph(navController: NavHostController): Unit {
             val appCardsViewModel: AppCardsViewModel = viewModel()
             AppCardsScreen(
                 viewModel = appCardsViewModel,
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable(Routes.APP_FRAMES) {
+            val appFramesViewModel: AppFramesViewModel = viewModel()
+            AppFramesScreen(
+                viewModel = appFramesViewModel,
                 onBack = { navController.popBackStack() }
             )
         }
