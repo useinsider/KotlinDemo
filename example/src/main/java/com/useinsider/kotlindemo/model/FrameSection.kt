@@ -4,6 +4,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.useinsider.insider.InsiderAppFramesViewStatus
 
 /**
  * Observable state for one App Frames placement section. Each added placement gets its own section
@@ -31,8 +32,13 @@ public class FrameSection(public val id: Long, public val placementId: String) {
 
     internal fun toggleAttached() { attached = !attached }
 
-    internal fun onStartLoading() { status = "startLoading" }
-    internal fun onFinishLoading() { load += 1; status = "finishLoading" }
+    internal fun onStatusChange(
+        newStatus: InsiderAppFramesViewStatus,
+        previousStatus: InsiderAppFramesViewStatus
+    ) {
+        if (newStatus == InsiderAppFramesViewStatus.READY) load += 1
+        status = "${previousStatus.name} → ${newStatus.name}"
+    }
     internal fun onFailed(description: String) { error += 1; status = "failed — $description" }
     internal fun onHeightChange(heightPx: Int) { height += 1; status = "heightChange $heightPx" }
     internal fun onAction() { action += 1; status = "action" }

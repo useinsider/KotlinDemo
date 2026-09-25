@@ -53,6 +53,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import com.useinsider.insider.InsiderAppFramesError
 import com.useinsider.insider.InsiderAppFramesView
 import com.useinsider.insider.InsiderAppFramesViewListener
+import com.useinsider.insider.InsiderAppFramesViewStatus
 import com.useinsider.kotlindemo.component.InsiderGradientButton
 import com.useinsider.kotlindemo.model.FrameSection
 import com.useinsider.kotlindemo.ui.theme.Figtree
@@ -245,25 +246,25 @@ private fun sectionListener(
     onAction: (String) -> Unit
 ): InsiderAppFramesViewListener = object : InsiderAppFramesViewListener {
 
-    override fun onLoadStarted(view: InsiderAppFramesView) {
-        section.onStartLoading()
-    }
-
-    override fun onLoadFinished(view: InsiderAppFramesView) {
-        section.onFinishLoading()
+    override fun onStatusChanged(
+        view: InsiderAppFramesView,
+        status: InsiderAppFramesViewStatus,
+        previousStatus: InsiderAppFramesViewStatus
+    ) {
+        section.onStatusChange(status, previousStatus)
     }
 
     override fun onLoadFailed(view: InsiderAppFramesView, error: InsiderAppFramesError) {
         section.onFailed(describeError(error))
     }
 
-    override fun onHeightUpdateRequested(view: InsiderAppFramesView, heightPx: Int) {
-        section.onHeightChange(heightPx)
+    override fun onHeightChangeRequested(view: InsiderAppFramesView, optimalHeight: Int) {
+        section.onHeightChange(optimalHeight)
     }
 
-    override fun onFrameActionTriggered(view: InsiderAppFramesView, data: JSONObject) {
+    override fun onActionTriggered(view: InsiderAppFramesView, actionData: JSONObject) {
         section.onAction()
-        onAction(prettyJson(data))
+        onAction(prettyJson(actionData))
     }
 
     override fun onDismissRequested(view: InsiderAppFramesView) {

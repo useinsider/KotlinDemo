@@ -341,12 +341,13 @@ independent, removable section that exposes every `InsiderAppFramesViewListener`
 - **Runtime placement input** — type a placement id and tap **+ Add Placement** (the IME "done"
   action adds too). The same placement id may be added multiple times; each gets its own section.
 - **Per-section controls** — a header with the placement id, a **Detach / Attach** toggle that
-  removes/re-adds the frame view (re-attaching re-subscribes and fires `onLoadStarted` again), and
+  removes/re-adds the frame view (re-attaching re-subscribes and replays the `onStatusChanged` loading phases), and
   a **Delete** that removes the section.
 - **Full listener coverage** — one `InsiderAppFramesViewListener` per section drives a status line
   plus per-callback counters `load · height · action · error`:
-  `onLoadStarted`/`onLoadFinished` (status + `load`), `onHeightUpdateRequested` (`height`),
-  `onFrameActionTriggered` (`action`, and the payload is shown pretty-printed in a dialog),
+  `onStatusChanged` (status line shows `PREVIOUS → STATUS`; `load` counts transitions into `READY`),
+  `onHeightChangeRequested` (`height`),
+  `onActionTriggered` (`action`, and the payload is shown pretty-printed in a dialog),
   `onLoadFailed` (`error`, rendered as the `InsiderAppFramesErrorCode` name + message), and
   `onDismissRequested` (a template-driven dismiss removes the whole section, the same path as Delete).
 
@@ -359,11 +360,14 @@ AndroidView(
         InsiderAppFramesView(ctx).apply {
             setPlacementId(placementId)
             setAppFramesListener(object : InsiderAppFramesViewListener {
-                override fun onLoadStarted(view: InsiderAppFramesView) { /* status */ }
-                override fun onLoadFinished(view: InsiderAppFramesView) { /* status + load++ */ }
+                override fun onStatusChanged(
+                    view: InsiderAppFramesView,
+                    status: InsiderAppFramesViewStatus,
+                    previousStatus: InsiderAppFramesViewStatus
+                ) { /* status line; load++ on READY */ }
                 override fun onLoadFailed(view: InsiderAppFramesView, error: InsiderAppFramesError) { /* error++, name+message */ }
-                override fun onHeightUpdateRequested(view: InsiderAppFramesView, heightPx: Int) { /* height++ */ }
-                override fun onFrameActionTriggered(view: InsiderAppFramesView, data: JSONObject) { /* action++, show payload */ }
+                override fun onHeightChangeRequested(view: InsiderAppFramesView, optimalHeight: Int) { /* height++ */ }
+                override fun onActionTriggered(view: InsiderAppFramesView, actionData: JSONObject) { /* action++, show payload */ }
                 override fun onDismissRequested(view: InsiderAppFramesView) { /* remove section */ }
             })
         }
