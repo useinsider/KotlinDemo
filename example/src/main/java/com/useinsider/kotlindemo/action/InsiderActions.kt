@@ -2,7 +2,6 @@ package com.useinsider.kotlindemo.action
 
 import com.useinsider.insider.ContentOptimizerDataType
 import com.useinsider.insider.Insider
-import com.useinsider.insider.InsiderGender
 import com.useinsider.insider.InsiderIdentifiers
 import com.useinsider.insider.InsiderProduct
 import com.useinsider.kotlindemo.model.EventParameter
@@ -153,12 +152,7 @@ public object InsiderActions {
     }
 
     public fun setGender(value: String, callback: (String) -> Unit): Unit {
-        val gender = when (value.lowercase()) {
-            "male", "0" -> InsiderGender.MALE
-            "female", "1" -> InsiderGender.FEMALE
-            else -> InsiderGender.OTHER
-        }
-        currentUser.setGender(gender)
+        currentUser.setGender(mapGender(value))
         callback("Gender set: $value")
     }
 
@@ -448,13 +442,13 @@ public object InsiderActions {
                 when (param.type) {
                     ParameterType.STRING -> event.addParameterWithString(param.name, param.value)
                     ParameterType.INTEGER -> event.addParameterWithInt(
-                        param.name, param.value.toIntOrNull() ?: 0
+                        param.name, coerceInt(param.value)
                     )
                     ParameterType.DOUBLE -> event.addParameterWithDouble(
-                        param.name, param.value.toDoubleOrNull() ?: 0.0
+                        param.name, coerceDouble(param.value)
                     )
                     ParameterType.BOOLEAN -> event.addParameterWithBoolean(
-                        param.name, param.value.toBooleanStrictOrNull() ?: false
+                        param.name, coerceBoolean(param.value)
                     )
                 }
             }
@@ -473,13 +467,13 @@ public object InsiderActions {
                         attr.name, attr.value
                     )
                     ParameterType.INTEGER -> currentUser.setCustomAttributeWithInt(
-                        attr.name, attr.value.toIntOrNull() ?: 0
+                        attr.name, coerceInt(attr.value)
                     )
                     ParameterType.DOUBLE -> currentUser.setCustomAttributeWithDouble(
-                        attr.name, attr.value.toDoubleOrNull() ?: 0.0
+                        attr.name, coerceDouble(attr.value)
                     )
                     ParameterType.BOOLEAN -> currentUser.setCustomAttributeWithBoolean(
-                        attr.name, attr.value.toBooleanStrictOrNull() ?: false
+                        attr.name, coerceBoolean(attr.value)
                     )
                 }
             }
