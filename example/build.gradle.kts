@@ -100,6 +100,14 @@ dependencies {
         }
         logger.lifecycle("Linking LOCAL minified SDK ${localMinifiedSdk.path}")
         implementation(files(localMinifiedSdk))
+        // The local AAR carries no POM, so the SDK's own dependencies are declared here explicitly.
+        implementation(libs.firebase.messaging)
+        implementation(libs.lifecycle.process)
+        implementation(libs.security.crypto)
+        implementation(libs.huawei.push)
+        implementation(libs.huawei.ads)
+        implementation(libs.huawei.location)
+        implementation(libs.play.services.location)
     } else {
         implementation(libs.insider.sdk)
     }
