@@ -78,7 +78,7 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.compose.material.icons.extended)
-    implementation(libs.androidx.work.runtime)
+    // implementation(libs.androidx.work.runtime) // MOB-30140: carried by the SDK POM
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.coil.compose)
@@ -100,22 +100,31 @@ dependencies {
         }
         logger.lifecycle("Linking LOCAL minified SDK ${localMinifiedSdk.path}")
         implementation(files(localMinifiedSdk))
+        // The local AAR carries no POM, so the SDK's own dependencies are declared here explicitly.
+        implementation(libs.firebase.messaging)
+        implementation(libs.lifecycle.process)
+        implementation(libs.security.crypto)
+        implementation(libs.huawei.push)
+        implementation(libs.huawei.ads)
+        implementation(libs.huawei.location)
+        implementation(libs.play.services.location)
     } else {
         implementation(libs.insider.sdk)
     }
 
     implementation(libs.insider.webview)
+    // insiderwebview declares webkit as compileOnly, so the app still provides it.
     implementation(libs.webkit)
-    implementation(libs.firebase.messaging)
-    implementation(libs.lifecycle.process)
-    implementation(libs.security.crypto)
 
-    implementation(libs.huawei.push)
-    implementation(libs.huawei.ads)
-    implementation(libs.huawei.location)
-
-    //Optional for Geofence
-    implementation(libs.play.services.location)
+    // MOB-30140 embed-deps validation: the SDK POM now carries these, so a new partner declares
+    // only the SDK line. Uncomment to simulate an existing partner that still lists them by hand.
+    // implementation(libs.firebase.messaging)
+    // implementation(libs.lifecycle.process)
+    // implementation(libs.security.crypto)
+    // implementation(libs.huawei.push)
+    // implementation(libs.huawei.ads)
+    // implementation(libs.huawei.location)
+    // implementation(libs.play.services.location)
 
     debugImplementation(libs.androidx.ui.tooling)
 

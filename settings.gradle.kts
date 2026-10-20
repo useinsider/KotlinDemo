@@ -15,6 +15,12 @@ pluginManagement {
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
+        // MOB-30140 validation: resolves the SDK RC build (insider 17.4.0-rc1, insiderwebview 1.0.2-rc1)
+        // from the partner-invisible RC path. Listed first so the RC build wins over the production repo.
+        maven {
+            url = uri("https://mobilesdk.useinsider.com/android/rc")
+            content { includeGroup("com.useinsider") }
+        }
         google()
         mavenCentral()
         maven { url = uri("https://mobilesdk.useinsider.com/android") }

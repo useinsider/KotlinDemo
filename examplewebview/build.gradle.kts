@@ -55,14 +55,18 @@ dependencies {
 
     implementation(libs.insider.sdk)
     implementation(libs.insider.webview)
+    // insiderwebview declares webkit as compileOnly, so the app still provides it.
     implementation(libs.webkit)
-    implementation(libs.firebase.messaging)
-    implementation(libs.lifecycle.process)
-    implementation(libs.security.crypto)
-    implementation(libs.androidx.work.runtime)
+
+    // MOB-30140 embed-deps validation: the SDK POM now carries these, so a new partner declares
+    // only the SDK line. Uncomment to simulate an existing partner that still lists them by hand.
+    // implementation(libs.firebase.messaging)
+    // implementation(libs.lifecycle.process)
+    // implementation(libs.security.crypto)
+    // implementation(libs.androidx.work.runtime)
     implementation(libs.androidx.work.runtime.ktx)
 
-    implementation(libs.huawei.push)
-    implementation(libs.huawei.ads)
-    implementation(libs.huawei.location)
+    // implementation(libs.huawei.push)
+    // implementation(libs.huawei.ads)
+    // implementation(libs.huawei.location)
 }
