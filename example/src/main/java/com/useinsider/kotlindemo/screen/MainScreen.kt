@@ -40,7 +40,8 @@ public fun MainScreen(
     onNavigateToCustomEvent: () -> Unit,
     onNavigateToCustomAttributes: () -> Unit,
     onNavigateToAppCards: () -> Unit,
-    onNavigateToAppFrames: () -> Unit
+    onNavigateToAppFrames: () -> Unit,
+    onNavigateToSmartRecommender: () -> Unit
 ): Unit {
     val callback: (String) -> Unit = { viewModel.updatePrintLabel(it) }
     val permissions = rememberRuntimePermissionRequester()
@@ -81,7 +82,8 @@ public fun MainScreen(
                         }
                     },
                     ButtonItem("App Cards") { onNavigateToAppCards() },
-                    ButtonItem("App Frames") { onNavigateToAppFrames() }
+                    ButtonItem("App Frames") { onNavigateToAppFrames() },
+                    ButtonItem("Smart Recommender") { onNavigateToSmartRecommender() }
                 )
             )
             Spacer(Modifier.height(16.dp))
