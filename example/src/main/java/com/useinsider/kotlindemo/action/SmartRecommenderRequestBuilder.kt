@@ -123,6 +123,9 @@ public object SmartRecommenderRequestBuilder {
         return filters
     }
 
+    // click and view return nothing and can refuse silently, so the label never claims a record.
+    public fun callLabel(call: String): String = "called $call — the SDK may refuse it, check logcat"
+
     public fun clickMap(product: ClickableProduct): Map<String, Any> {
         val map = mutableMapOf<String, Any>(
             "product_id" to product.id,

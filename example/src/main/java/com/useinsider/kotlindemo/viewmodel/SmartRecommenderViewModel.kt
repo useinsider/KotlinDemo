@@ -116,7 +116,7 @@ public class SmartRecommenderViewModel : ViewModel() {
         product.groupCode?.let { insiderProduct.setGroupCode(it) }
 
         Insider.Instance.appSmartRecommender().click(product.context.referenceId, insiderProduct)
-        lastAction = "click(referenceId, InsiderProduct) ${product.id}"
+        lastAction = SmartRecommenderRequestBuilder.callLabel("click(referenceId, InsiderProduct) ${product.id}")
     }
 
     public fun clickWithMap(product: InsiderAppSmartRecommenderProduct): Unit {
@@ -133,7 +133,7 @@ public class SmartRecommenderViewModel : ViewModel() {
         )
 
         Insider.Instance.appSmartRecommender().click(product.context.referenceId, map)
-        lastAction = "click(referenceId, Map) ${product.id}"
+        lastAction = SmartRecommenderRequestBuilder.callLabel("click(referenceId, Map) ${product.id}")
     }
 
     public fun setGdprConsent(consent: Boolean): Unit {
@@ -152,7 +152,7 @@ public class SmartRecommenderViewModel : ViewModel() {
         // Recorded here, not from the composable: a recomposition must not record a second view.
         if (products != null && products.outcome == InsiderAppSmartRecommenderResult.Outcome.FILLED) {
             Insider.Instance.appSmartRecommender().view(products.products)
-            lastAction = "view(${products.products.size} products)"
+            lastAction = SmartRecommenderRequestBuilder.callLabel("view(${products.products.size} products)")
         }
     }
 

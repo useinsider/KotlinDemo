@@ -113,7 +113,7 @@ public fun SmartRecommenderScreen(
             Field("Locale (empty: overload without locale)", form.locale, "sr_locale") { value ->
                 viewModel.updateForm { it.copy(locale = value) }
             }
-            Field("Currency", form.currency, "sr_currency") { value ->
+            Field("Currency (the SDK requires it, e.g. TRY)", form.currency, "sr_currency") { value ->
                 viewModel.updateForm { it.copy(currency = value) }
             }
             Field("Identifier: Email", form.email, "sr_email") { value ->

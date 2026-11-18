@@ -223,4 +223,12 @@ class SmartRecommenderRequestBuilderTest {
         assertEquals("", map["image_url"])
         assertFalse(map.containsKey("group_code"))
     }
+
+    @Test
+    fun callLabelNamesTheCallWithoutClaimingItWasRecorded() {
+        assertEquals(
+            "called click(referenceId, Map) p1 — the SDK may refuse it, check logcat",
+            SmartRecommenderRequestBuilder.callLabel("click(referenceId, Map) p1")
+        )
+    }
 }
