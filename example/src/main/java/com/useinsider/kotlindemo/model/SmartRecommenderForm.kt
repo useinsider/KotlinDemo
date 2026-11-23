@@ -52,3 +52,11 @@ public data class ClickableProduct(
     val currency: String,
     val groupCode: String?
 )
+
+public enum class MapValueType { STRING, NUMBER, BOOLEAN, LIST }
+
+public data class MapEntryForm(
+    val key: String = "",
+    val type: MapValueType = MapValueType.STRING,
+    val value: String = ""
+)

@@ -20,6 +20,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -53,6 +54,8 @@ import com.useinsider.kotlindemo.component.InsiderGradientButton
 import com.useinsider.kotlindemo.component.SectionHeader
 import com.useinsider.kotlindemo.model.ConditionForm
 import com.useinsider.kotlindemo.model.ConditionValueType
+import com.useinsider.kotlindemo.model.MapEntryForm
+import com.useinsider.kotlindemo.model.MapValueType
 import com.useinsider.kotlindemo.ui.theme.Figtree
 import com.useinsider.kotlindemo.ui.theme.InsiderBeige
 import com.useinsider.kotlindemo.ui.theme.InsiderDanger
@@ -222,6 +225,10 @@ public fun SmartRecommenderScreen(
                 )
             }
 
+            FilterSwitch("Auto view on FILLED result", viewModel.autoView, "sr_auto_view") { enabled ->
+                viewModel.updateAutoView(enabled)
+            }
+
             InsiderGradientButton(
                 text = "Get Products",
                 onClick = { viewModel.getProducts() },
@@ -247,10 +254,14 @@ public fun SmartRecommenderScreen(
                 ResultSection(result)
                 ProductsSection(
                     products = result.products,
+                    selectedIndices = viewModel.selectedIndices,
+                    onToggleSelected = { viewModel.toggleSelected(it) },
                     onClickProduct = { viewModel.clickWithProduct(it) },
                     onClickMap = { viewModel.clickWithMap(it) }
                 )
             }
+
+            ManualSection(viewModel)
         }
     }
 }
@@ -283,6 +294,8 @@ private fun ErrorSection(error: InsiderAppSmartRecommenderException) {
 @Composable
 private fun ProductsSection(
     products: List<InsiderAppSmartRecommenderProduct>,
+    selectedIndices: Set<Int>,
+    onToggleSelected: (Int) -> Unit,
     onClickProduct: (InsiderAppSmartRecommenderProduct) -> Unit,
     onClickMap: (InsiderAppSmartRecommenderProduct) -> Unit
 ) {
@@ -307,7 +320,7 @@ private fun ProductsSection(
                         .clip(RoundedCornerShape(6.dp))
                         .background(InsiderInputBg)
                 )
-                Column(modifier = Modifier.padding(start = 10.dp)) {
+                Column(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
                     Text(
                         text = product.name,
                         color = InsiderTextDark,
@@ -323,6 +336,11 @@ private fun ProductsSection(
                     )
                     Text(text = product.id, color = InsiderTextGray, fontFamily = Figtree, fontSize = 12.sp)
                 }
+                Checkbox(
+                    checked = index in selectedIndices,
+                    onCheckedChange = { onToggleSelected(index) },
+                    modifier = Modifier.testTag("sr_select_product_$index")
+                )
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                 InsiderGradientButton(
@@ -336,6 +354,101 @@ private fun ProductsSection(
                     modifier = Modifier.weight(1f).testTag("sr_click_map_$index")
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun ManualSection(viewModel: SmartRecommenderViewModel) {
+    val selectedCount = viewModel.selectedIndices.size
+
+    SectionHeader("Manual view / click", modifier = Modifier.padding(top = 8.dp))
+    Text(
+        text = "Select products with the checkboxes above. Nothing selected sends view with an empty list.",
+        color = InsiderTextGray,
+        fontFamily = Figtree,
+        fontSize = 12.sp
+    )
+    InsiderGradientButton(
+        text = "View selected ($selectedCount)",
+        onClick = { viewModel.viewSelected() },
+        modifier = Modifier.fillMaxWidth().testTag("sr_view_selected")
+    )
+    Field("Reference ID for manual click", viewModel.manualReferenceId, "sr_manual_reference_id") { value ->
+        viewModel.updateManualReferenceId(value)
+    }
+    InsiderGradientButton(
+        text = "Click first selected (Product)",
+        onClick = { viewModel.clickSelectedWithManualReference() },
+        enabled = selectedCount > 0,
+        modifier = Modifier.fillMaxWidth().testTag("sr_click_selected_product")
+    )
+
+    Text(
+        text = "Click map",
+        color = InsiderTextDark,
+        fontFamily = Figtree,
+        fontSize = 15.sp,
+        fontWeight = FontWeight.SemiBold,
+        modifier = Modifier.padding(top = 4.dp)
+    )
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+        InsiderGradientButton(
+            text = "Fill from selected",
+            onClick = { viewModel.fillMapFromSelected() },
+            enabled = selectedCount > 0,
+            modifier = Modifier.weight(1f).testTag("sr_map_fill")
+        )
+        InsiderGradientButton(
+            text = "Add key",
+            onClick = { viewModel.addMapEntry() },
+            modifier = Modifier.weight(1f).testTag("sr_map_add")
+        )
+    }
+    viewModel.mapEntries.forEachIndexed { index, entry ->
+        MapEntryRow(
+            index = index,
+            entry = entry,
+            onChange = { transform -> viewModel.updateMapEntry(index, transform) },
+            onRemove = { viewModel.removeMapEntry(index) }
+        )
+    }
+    InsiderGradientButton(
+        text = "Click (Map above)",
+        onClick = { viewModel.clickWithManualMap() },
+        modifier = Modifier.fillMaxWidth().testTag("sr_click_manual_map")
+    )
+}
+
+@Composable
+private fun MapEntryRow(
+    index: Int,
+    entry: MapEntryForm,
+    onChange: ((MapEntryForm) -> MapEntryForm) -> Unit,
+    onRemove: () -> Unit
+) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(1.dp, InsiderInputBorder, RoundedCornerShape(8.dp))
+            .padding(8.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+            Box(modifier = Modifier.weight(1f)) {
+                Field("Key", entry.key, "sr_map_key_$index") { value -> onChange { it.copy(key = value) } }
+            }
+            IconButton(onClick = onRemove, modifier = Modifier.testTag("sr_map_remove_$index")) {
+                Icon(imageVector = Icons.Filled.Close, contentDescription = "Remove key", tint = InsiderDanger)
+            }
+        }
+        Dropdown(
+            selected = entry.type.name,
+            options = MapValueType.entries.map { it.name },
+            tag = "sr_map_type_$index"
+        ) { value -> onChange { it.copy(type = MapValueType.valueOf(value)) } }
+        Field("Value (LIST: comma separated)", entry.value, "sr_map_value_$index") { value ->
+            onChange { it.copy(value = value) }
         }
     }
 }

@@ -9,6 +9,8 @@ import com.useinsider.insider.InsiderAppSmartRecommenderProductsFilter
 import com.useinsider.kotlindemo.model.ClickableProduct
 import com.useinsider.kotlindemo.model.ConditionForm
 import com.useinsider.kotlindemo.model.ConditionValueType
+import com.useinsider.kotlindemo.model.MapEntryForm
+import com.useinsider.kotlindemo.model.MapValueType
 import com.useinsider.kotlindemo.model.ProductForm
 import com.useinsider.kotlindemo.model.SmartRecommenderForm
 import org.junit.Assert.assertEquals
@@ -230,5 +232,65 @@ class SmartRecommenderRequestBuilderTest {
             "called click(referenceId, Map) p1 — the SDK may refuse it, check logcat",
             SmartRecommenderRequestBuilder.callLabel("click(referenceId, Map) p1")
         )
+    }
+
+    @Test
+    fun mapEntriesTypeEachValueByItsKotlinType() {
+        assertEquals(
+            listOf(
+                MapEntryForm("product_id", MapValueType.STRING, "p1"),
+                MapEntryForm("price", MapValueType.NUMBER, "19.9"),
+                MapEntryForm("in_stock", MapValueType.BOOLEAN, "true"),
+                MapEntryForm("taxonomy", MapValueType.LIST, "Shoes, Running")
+            ),
+            SmartRecommenderRequestBuilder.mapEntries(
+                linkedMapOf(
+                    "product_id" to "p1",
+                    "price" to 19.9,
+                    "in_stock" to true,
+                    "taxonomy" to listOf("Shoes", "Running")
+                )
+            )
+        )
+    }
+
+    @Test
+    fun clickMapFromEntriesRoundTripsTheProductMap() {
+        val product = ClickableProduct(
+            id = "p1", name = "Shoe", categories = listOf("Shoes", "Running"),
+            imageUrl = "https://example.com/p1.png", price = 19.9, currency = "TRY", groupCode = "g1"
+        )
+        val map = SmartRecommenderRequestBuilder.clickMap(product)
+
+        assertEquals(map, SmartRecommenderRequestBuilder.clickMap(SmartRecommenderRequestBuilder.mapEntries(map)))
+    }
+
+    @Test
+    fun clickMapFromEntriesSendsTheTypeTheTesterChose() {
+        val map = SmartRecommenderRequestBuilder.clickMap(
+            listOf(
+                MapEntryForm("price", MapValueType.STRING, "19.9"),
+                MapEntryForm("in_stock", MapValueType.BOOLEAN, "True"),
+                MapEntryForm("extra", MapValueType.LIST, "")
+            )
+        )
+
+        assertEquals("19.9", map["price"])
+        assertEquals(false, map["in_stock"])
+        assertEquals(emptyList<String>(), map["extra"])
+    }
+
+    @Test
+    fun clickMapFromEntriesSendsNanForAnInvalidNumber() {
+        val price = SmartRecommenderRequestBuilder.clickMap(
+            listOf(MapEntryForm("price", MapValueType.NUMBER, "abc"))
+        )["price"] as Double
+
+        assertTrue(price.isNaN())
+    }
+
+    @Test
+    fun clickMapFromNoEntriesIsEmpty() {
+        assertTrue(SmartRecommenderRequestBuilder.clickMap(emptyList<MapEntryForm>()).isEmpty())
     }
 }

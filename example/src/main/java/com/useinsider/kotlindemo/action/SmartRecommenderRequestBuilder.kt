@@ -8,6 +8,8 @@ import com.useinsider.insider.InsiderAppSmartRecommenderProductsFilter
 import com.useinsider.kotlindemo.model.ClickableProduct
 import com.useinsider.kotlindemo.model.ConditionForm
 import com.useinsider.kotlindemo.model.ConditionValueType
+import com.useinsider.kotlindemo.model.MapEntryForm
+import com.useinsider.kotlindemo.model.MapValueType
 import com.useinsider.kotlindemo.model.ProductForm
 import com.useinsider.kotlindemo.model.SmartRecommenderForm
 
@@ -138,5 +140,24 @@ public object SmartRecommenderRequestBuilder {
         product.groupCode?.let { map["group_code"] = it }
 
         return map
+    }
+
+    public fun mapEntries(map: Map<String, Any>): List<MapEntryForm> = map.map { (key, value) ->
+        when (value) {
+            is Boolean -> MapEntryForm(key, MapValueType.BOOLEAN, value.toString())
+            is Number -> MapEntryForm(key, MapValueType.NUMBER, value.toString())
+            is List<*> -> MapEntryForm(key, MapValueType.LIST, value.joinToString(", "))
+            else -> MapEntryForm(key, MapValueType.STRING, value.toString())
+        }
+    }
+
+    // Entries go out as typed, so a tester can drop a key, add one, or send the wrong type on purpose.
+    public fun clickMap(entries: List<MapEntryForm>): Map<String, Any> = entries.associate { entry ->
+        entry.key to when (entry.type) {
+            MapValueType.STRING -> entry.value
+            MapValueType.NUMBER -> entry.value.toDoubleOrNull() ?: Double.NaN
+            MapValueType.BOOLEAN -> entry.value == "true"
+            MapValueType.LIST -> split(entry.value)
+        }
     }
 }
