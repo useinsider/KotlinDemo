@@ -107,6 +107,8 @@ public class SmartRecommenderViewModel : ViewModel() {
         isLoading = true
         result = null
         error = null
+        selectedIndices = emptySet()
+        lastAction = null
         lastCall = overload.label
 
         when (overload) {
