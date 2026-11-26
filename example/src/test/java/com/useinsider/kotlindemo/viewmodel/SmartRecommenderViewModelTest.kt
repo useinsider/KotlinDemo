@@ -74,6 +74,15 @@ class SmartRecommenderViewModelTest {
     }
 
     @Test
+    fun updateAutoViewTurnsTheSwitchOffThenOnAgain() {
+        viewModel.updateAutoView(false)
+        assertEquals(false, viewModel.autoView)
+
+        viewModel.updateAutoView(true)
+        assertEquals(true, viewModel.autoView)
+    }
+
+    @Test
     fun addMapEntryAppendsAnEmptyEntry() {
         viewModel.addMapEntry()
 

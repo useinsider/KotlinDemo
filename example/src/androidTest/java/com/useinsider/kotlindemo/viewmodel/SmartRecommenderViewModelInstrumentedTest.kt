@@ -1,11 +1,15 @@
 package com.useinsider.kotlindemo.viewmodel
 
+import android.os.SystemClock
+import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.useinsider.kotlindemo.MainActivity
 import androidx.test.platform.app.InstrumentationRegistry
 import com.useinsider.kotlindemo.action.GetProductsOverload
 import com.useinsider.kotlindemo.model.MapEntryForm
 import com.useinsider.kotlindemo.model.MapValueType
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -177,5 +181,48 @@ class SmartRecommenderViewModelInstrumentedTest {
         }
 
         assertEquals("called clickWidget(\"\") — the SDK may refuse it, check logcat", lastAction)
+    }
+
+    @Test
+    fun getProductsWithoutCurrencyCompletesWithAnErrorAndNoResult() {
+        val (isLoading, error, result) = ActivityScenario.launch(MainActivity::class.java).use {
+            viewModel = createViewModel()
+
+            onMain {
+                viewModel.updateForm { it.copy(referenceId = REFERENCE_ID, currency = "") }
+                viewModel.getProducts()
+            }
+            val deadline = SystemClock.uptimeMillis() + 15_000
+            while (onMain { viewModel.isLoading } && SystemClock.uptimeMillis() < deadline) {
+                SystemClock.sleep(100)
+            }
+
+            onMain { Triple(viewModel.isLoading, viewModel.error, viewModel.result) }
+        }
+
+        assertFalse("callback did not fire within 15 s", isLoading)
+        assertNotNull(error)
+        assertNull(result)
+    }
+
+    @Test
+    fun setGdprConsentNamesTheConsentPassedToTheSdk() {
+        viewModel = createViewModel()
+
+        try {
+            val granted = onMain {
+                viewModel.setGdprConsent(true)
+                viewModel.lastAction
+            }
+            val revoked = onMain {
+                viewModel.setGdprConsent(false)
+                viewModel.lastAction
+            }
+
+            assertEquals("GDPR consent: true", granted)
+            assertEquals("GDPR consent: false", revoked)
+        } finally {
+            onMain { viewModel.setGdprConsent(true) }
+        }
     }
 }
