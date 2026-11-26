@@ -166,4 +166,16 @@ class SmartRecommenderViewModelInstrumentedTest {
 
         assertEquals("called viewWidget(\"\") — the SDK may refuse it, check logcat", lastAction)
     }
+
+    @Test
+    fun clickWidgetWithEmptyReferencePassesItThrough() {
+        viewModel = createViewModel()
+
+        val lastAction = onMain {
+            viewModel.clickWidget()
+            viewModel.lastAction
+        }
+
+        assertEquals("called clickWidget(\"\") — the SDK may refuse it, check logcat", lastAction)
+    }
 }

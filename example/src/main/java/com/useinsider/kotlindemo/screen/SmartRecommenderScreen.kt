@@ -225,7 +225,7 @@ public fun SmartRecommenderScreen(
                 )
             }
 
-            FilterSwitch("Auto view on FILLED result", viewModel.autoView, "sr_auto_view") { enabled ->
+            FilterSwitch("Auto view + widget view on FILLED result", viewModel.autoView, "sr_auto_view") { enabled ->
                 viewModel.updateAutoView(enabled)
             }
 
