@@ -128,4 +128,42 @@ class SmartRecommenderViewModelInstrumentedTest {
             lastAction
         )
     }
+
+    @Test
+    fun viewWidgetNamesTheTypedReference() {
+        viewModel = createViewModel()
+
+        val lastAction = onMain {
+            viewModel.updateManualReferenceId("manual-reference")
+            viewModel.viewWidget()
+            viewModel.lastAction
+        }
+
+        assertEquals("called viewWidget(\"manual-reference\") — the SDK may refuse it, check logcat", lastAction)
+    }
+
+    @Test
+    fun clickWidgetNamesTheTypedReference() {
+        viewModel = createViewModel()
+
+        val lastAction = onMain {
+            viewModel.updateManualReferenceId("manual-reference")
+            viewModel.clickWidget()
+            viewModel.lastAction
+        }
+
+        assertEquals("called clickWidget(\"manual-reference\") — the SDK may refuse it, check logcat", lastAction)
+    }
+
+    @Test
+    fun viewWidgetWithEmptyReferencePassesItThrough() {
+        viewModel = createViewModel()
+
+        val lastAction = onMain {
+            viewModel.viewWidget()
+            viewModel.lastAction
+        }
+
+        assertEquals("called viewWidget(\"\") — the SDK may refuse it, check logcat", lastAction)
+    }
 }

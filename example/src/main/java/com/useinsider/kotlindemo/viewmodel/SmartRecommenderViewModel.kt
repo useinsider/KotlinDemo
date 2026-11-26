@@ -190,6 +190,16 @@ public class SmartRecommenderViewModel : ViewModel() {
         lastAction = SmartRecommenderRequestBuilder.callLabel("click(\"$manualReferenceId\", Map ${map.keys})")
     }
 
+    public fun viewWidget(): Unit {
+        Insider.Instance.appSmartRecommender().viewWidget(manualReferenceId)
+        lastAction = SmartRecommenderRequestBuilder.callLabel("viewWidget(\"$manualReferenceId\")")
+    }
+
+    public fun clickWidget(): Unit {
+        Insider.Instance.appSmartRecommender().clickWidget(manualReferenceId)
+        lastAction = SmartRecommenderRequestBuilder.callLabel("clickWidget(\"$manualReferenceId\")")
+    }
+
     public fun setGdprConsent(consent: Boolean): Unit {
         Insider.Instance.setGDPRConsent(consent)
         lastAction = "GDPR consent: $consent"
@@ -207,8 +217,12 @@ public class SmartRecommenderViewModel : ViewModel() {
 
         // Recorded here, not from the composable: a recomposition must not record a second view.
         if (autoView && products != null && products.outcome == InsiderAppSmartRecommenderResult.Outcome.FILLED) {
+            val referenceId = products.context.referenceId
             Insider.Instance.appSmartRecommender().view(products.products)
-            lastAction = SmartRecommenderRequestBuilder.callLabel("view(${products.products.size} products)")
+            Insider.Instance.appSmartRecommender().viewWidget(referenceId)
+            lastAction = SmartRecommenderRequestBuilder.callLabel(
+                "view(${products.products.size} products), viewWidget(\"$referenceId\")"
+            )
         }
     }
 
