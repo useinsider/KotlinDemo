@@ -6,7 +6,6 @@ import com.useinsider.insider.InsiderIdentifiers
 import com.useinsider.insider.InsiderProduct
 import com.useinsider.kotlindemo.model.EventParameter
 import com.useinsider.kotlindemo.model.ParameterType
-import java.util.Date
 
 public object InsiderActions {
 
@@ -157,8 +156,9 @@ public object InsiderActions {
     }
 
     public fun setBirthday(value: String, callback: (String) -> Unit): Unit {
-        currentUser.setBirthday(Date())
-        callback("Birthday set")
+        val birthday = parseBirthday(value) ?: return callback("Invalid birthday")
+        currentUser.setBirthday(birthday)
+        callback("Birthday set: $value")
     }
 
     public fun setLanguage(value: String, callback: (String) -> Unit): Unit {

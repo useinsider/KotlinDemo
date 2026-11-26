@@ -3,10 +3,20 @@ package com.useinsider.kotlindemo.action
 import com.useinsider.insider.InsiderGender
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ValueCoercionTest {
+
+    @Test
+    fun parseBirthdayReadsIsoDatesAsUtcMidnightAndRejectsTheRest() {
+        assertEquals(631152000000L, parseBirthday("1990-01-01")?.time)
+        assertEquals(631152000000L, parseBirthday(" 1990-01-01 ")?.time)
+        assertNull(parseBirthday(""))
+        assertNull(parseBirthday("01/01/1990"))
+        assertNull(parseBirthday("1990-02-30"))
+    }
 
     @Test
     fun coerceIntParsesOrFallsBackToZero() {

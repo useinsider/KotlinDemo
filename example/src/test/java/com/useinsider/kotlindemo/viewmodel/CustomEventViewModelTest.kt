@@ -3,6 +3,7 @@ package com.useinsider.kotlindemo.viewmodel
 import com.useinsider.kotlindemo.model.EventParameter
 import com.useinsider.kotlindemo.model.ParameterType
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 class CustomEventViewModelTest {
@@ -50,12 +51,20 @@ class CustomEventViewModelTest {
     }
 
     @Test
-    fun sendEventWithBlankNameReportsErrorWithoutCallingSdk() {
+    fun sendEventWithBlankNameShowsErrorAndKeepsTheScreenOpen() {
         val messages = mutableListOf<String>()
         viewModel.eventName = "   "
+        viewModel.updateParameterName(0, "typed")
 
         viewModel.sendEvent { messages += it }
 
-        assertEquals(listOf("Event name is required"), messages)
+        assertEquals(emptyList<String>(), messages)
+        assertEquals("Event name is required", viewModel.nameError)
+        assertEquals("typed", viewModel.parameters.single().name)
+    }
+
+    @Test
+    fun nameErrorStartsEmpty() {
+        assertNull(viewModel.nameError)
     }
 }

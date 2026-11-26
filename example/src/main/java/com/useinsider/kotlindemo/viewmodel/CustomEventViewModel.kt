@@ -13,6 +13,7 @@ import com.useinsider.kotlindemo.model.ParameterType
 public class CustomEventViewModel : ViewModel() {
 
     public var eventName: String by mutableStateOf("")
+    public var nameError: String? by mutableStateOf(null)
     public val parameters: SnapshotStateList<EventParameter> = mutableStateListOf(EventParameter())
 
     public fun addParameter(): Unit {
@@ -43,7 +44,13 @@ public class CustomEventViewModel : ViewModel() {
         }
     }
 
-    public fun sendEvent(callback: (String) -> Unit): Unit {
-        InsiderActions.tagCustomEvent(eventName, parameters.toList(), callback)
+    // onSent runs only when the event was sent, so the screen stays open with what was typed on a blank name.
+    public fun sendEvent(onSent: (String) -> Unit): Unit {
+        if (eventName.isBlank()) {
+            nameError = "Event name is required"
+            return
+        }
+        nameError = null
+        InsiderActions.tagCustomEvent(eventName, parameters.toList(), onSent)
     }
 }

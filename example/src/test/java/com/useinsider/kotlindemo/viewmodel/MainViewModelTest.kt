@@ -58,6 +58,17 @@ class MainViewModelTest {
     }
 
     @Test
+    fun repeatedCallbackReachesThePrintLabelAgain() {
+        val viewModel = MainViewModel()
+        CallbackStore.update("NOTIFICATION_OPEN")
+        viewModel.updatePrintLabel("Login")
+
+        CallbackStore.update("NOTIFICATION_OPEN")
+
+        assertEquals("NOTIFICATION_OPEN", viewModel.printLabelText)
+    }
+
+    @Test
     fun updateAndClearPrintLabel() {
         val viewModel = MainViewModel()
 

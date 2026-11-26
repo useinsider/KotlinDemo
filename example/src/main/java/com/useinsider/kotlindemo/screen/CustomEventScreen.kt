@@ -85,8 +85,13 @@ public fun CustomEventScreen(
         )
         OutlinedTextField(
             value = viewModel.eventName,
-            onValueChange = { viewModel.eventName = it },
+            onValueChange = {
+                viewModel.eventName = it
+                viewModel.nameError = null
+            },
             placeholder = { Text("e.g., product_viewed") },
+            isError = viewModel.nameError != null,
+            supportingText = viewModel.nameError?.let { error -> { Text(error) } },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(6.dp),
