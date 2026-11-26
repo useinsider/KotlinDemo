@@ -10,11 +10,13 @@ import com.useinsider.kotlindemo.screen.AppFramesScreen
 import com.useinsider.kotlindemo.screen.CustomEventScreen
 import com.useinsider.kotlindemo.screen.CustomUserAttributesScreen
 import com.useinsider.kotlindemo.screen.MainScreen
+import com.useinsider.kotlindemo.screen.SmartRecommenderScreen
 import com.useinsider.kotlindemo.viewmodel.AppCardsViewModel
 import com.useinsider.kotlindemo.viewmodel.AppFramesViewModel
 import com.useinsider.kotlindemo.viewmodel.CustomAttributesViewModel
 import com.useinsider.kotlindemo.viewmodel.CustomEventViewModel
 import com.useinsider.kotlindemo.viewmodel.MainViewModel
+import com.useinsider.kotlindemo.viewmodel.SmartRecommenderViewModel
 
 public object Routes {
     public const val MAIN: String = "main"
@@ -22,6 +24,7 @@ public object Routes {
     public const val CUSTOM_USER_ATTRIBUTES: String = "custom_user_attributes"
     public const val APP_CARDS: String = "app_cards"
     public const val APP_FRAMES: String = "app_frames"
+    public const val SMART_RECOMMENDER: String = "smart_recommender"
 }
 
 @Composable
@@ -35,7 +38,8 @@ public fun AppNavGraph(navController: NavHostController): Unit {
                 onNavigateToCustomEvent = { navController.navigate(Routes.CUSTOM_EVENT) },
                 onNavigateToCustomAttributes = { navController.navigate(Routes.CUSTOM_USER_ATTRIBUTES) },
                 onNavigateToAppCards = { navController.navigate(Routes.APP_CARDS) },
-                onNavigateToAppFrames = { navController.navigate(Routes.APP_FRAMES) }
+                onNavigateToAppFrames = { navController.navigate(Routes.APP_FRAMES) },
+                onNavigateToSmartRecommender = { navController.navigate(Routes.SMART_RECOMMENDER) }
             )
         }
         composable(Routes.CUSTOM_EVENT) {
@@ -60,6 +64,13 @@ public fun AppNavGraph(navController: NavHostController): Unit {
             val appFramesViewModel: AppFramesViewModel = viewModel()
             AppFramesScreen(
                 viewModel = appFramesViewModel,
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable(Routes.SMART_RECOMMENDER) {
+            val smartRecommenderViewModel: SmartRecommenderViewModel = viewModel()
+            SmartRecommenderScreen(
+                viewModel = smartRecommenderViewModel,
                 onBack = { navController.popBackStack() }
             )
         }

@@ -9,6 +9,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -24,7 +25,8 @@ import com.useinsider.kotlindemo.ui.theme.InsiderOrangeStart
 public fun InsiderGradientButton(
     text: String,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true
 ): Unit {
     val gradient = Brush.horizontalGradient(
         colors = listOf(InsiderOrangeStart, InsiderOrangeEnd)
@@ -32,8 +34,9 @@ public fun InsiderGradientButton(
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(8.dp))
+            .alpha(if (enabled) 1f else 0.5f)
             .background(gradient)
-            .clickable(onClick = onClick)
+            .clickable(enabled = enabled, onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 14.dp),
         contentAlignment = Alignment.Center
     ) {
