@@ -374,8 +374,20 @@ private fun ManualSection(viewModel: SmartRecommenderViewModel) {
         onClick = { viewModel.viewSelected() },
         modifier = Modifier.fillMaxWidth().testTag("sr_view_selected")
     )
-    Field("Reference ID for manual click", viewModel.manualReferenceId, "sr_manual_reference_id") { value ->
+    Field("Reference ID for manual click and widget", viewModel.manualReferenceId, "sr_manual_reference_id") { value ->
         viewModel.updateManualReferenceId(value)
+    }
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+        InsiderGradientButton(
+            text = "View widget",
+            onClick = { viewModel.viewWidget() },
+            modifier = Modifier.weight(1f).testTag("sr_view_widget")
+        )
+        InsiderGradientButton(
+            text = "Click widget",
+            onClick = { viewModel.clickWidget() },
+            modifier = Modifier.weight(1f).testTag("sr_click_widget")
+        )
     }
     InsiderGradientButton(
         text = "Click first selected (Product)",
